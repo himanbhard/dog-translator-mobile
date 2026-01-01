@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import Constants from 'expo-constants';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { makeRedirectUri } from 'expo-auth-session';
 import * as Google from 'expo-auth-session/providers/google';
@@ -23,11 +24,17 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
     const [appleAuthAvailable, setAppleAuthAvailable] = useState(false);
 
     // Google Sign-In Hook
+    // Construct the Proxy Redirect URI dynamically
+    const owner = Constants.expoConfig?.owner || 'anonymous';
+    const slug = Constants.expoConfig?.slug || 'dog-translator-android';
+    const proxyRedirectUri = `https://auth.expo.io/@${owner}/${slug}`;
+
+    // Google Sign-In Hook - using the proxy URI for Expo Go compatibility
     const [request, response, promptAsync] = Google.useAuthRequest({
         webClientId: '736369571076-4oag5ad2rss77dflac5uiemfiohk3cn7.apps.googleusercontent.com',
         iosClientId: '736369571076-4oag5ad2rss77dflac5uiemfiohk3cn7.apps.googleusercontent.com',
         androidClientId: '736369571076-4oag5ad2rss77dflac5uiemfiohk3cn7.apps.googleusercontent.com',
-        redirectUri: 'https://auth.expo.io/@anonymous/dog-translator-android' // Force this exact URI
+        redirectUri: proxyRedirectUri
     });
 
     useEffect(() => {
@@ -84,10 +91,8 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
         // Use expo-auth-session prompt
         try {
             console.log("🔵 DEBUG: Starting Google Sign-In");
-            console.log("   Redirect URI Configured:", 'https://auth.expo.io/@anonymous/dog-translator-android');
-            // Log what the app expects as return
-            const deepLink = makeRedirectUri({ useProxy: false });
-            console.log("   App Deep Link Scheme:", deepLink);
+            console.log("   🔗 REQUIRED REDIRECT URI (USE THIS):", proxyRedirectUri);
+            console.log("   (Add this exact URI to Google Cloud Console > Web Client ID)");
 
             await promptAsync();
         } catch (error: any) {
