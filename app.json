@@ -42,7 +42,6 @@
         }
       ],
       "expo-secure-store",
-      "expo-sqlite",
       "./plugins/withAllowNonModularHeaders",
       "./plugins/withIosModularHeaders",
       "./plugins/withAppCheckDebug",
