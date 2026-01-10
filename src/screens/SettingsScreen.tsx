@@ -1,20 +1,21 @@
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import React, { useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
 import { logout } from '../api/auth';
 import { useSettingsStore } from '../store/settingsStore';
 import { theme } from '../styles/theme';
+import { ScreenWrapper } from '../components/ui/ScreenWrapper';
+import { Card } from '../components/ui/Card';
+import { Button } from '../components/ui/Button';
 
 export default function SettingsScreen() {
-    // Stub functionality
     const [notifications, setNotifications] = useState(true);
     const [dataSaver, setDataSaver] = useState(false);
 
     // Global Settings
     const { autoSpeak, toggleAutoSpeak } = useSettingsStore();
 
-    // Debug settings (moved from Scanner)
+    // Debug settings
     const [debugMode, setDebugMode] = useState(false);
     const [useFetch, setUseFetch] = useState(false);
 
@@ -39,7 +40,7 @@ export default function SettingsScreen() {
         <TouchableOpacity style={styles.settingItem} onPress={onPress} disabled={!onPress}>
             <View style={styles.settingLeft}>
                 <View style={[styles.iconContainer]}>
-                    <Ionicons name={icon} size={22} color="#fff" />
+                    <Ionicons name={icon} size={20} color="#fff" />
                 </View>
                 <Text style={styles.settingTitle}>{title}</Text>
             </View>
@@ -47,137 +48,162 @@ export default function SettingsScreen() {
                 <Switch
                     value={value}
                     onValueChange={onToggle}
-                    trackColor={{ false: '#767577', true: theme.colors.primary }}
+                    trackColor={{ false: theme.colors.surfaceLight, true: theme.colors.primary }}
                     thumbColor={value ? '#fff' : '#f4f3f4'}
+                    ios_backgroundColor="#3e3e3e"
                 />
             ) : (
-                <Ionicons name="chevron-forward" size={20} color="rgba(255,255,255,0.3)" />
+                <Ionicons name="chevron-forward" size={20} color={theme.colors.textSecondary} />
             )}
         </TouchableOpacity>
     );
 
     return (
-        <View style={styles.container}>
-            <LinearGradient
-                colors={['#1a1a2e', '#16213e', '#0f3460']}
-                style={StyleSheet.absoluteFill}
-            />
+        <ScreenWrapper withScrollView>
             <ScrollView contentContainerStyle={styles.content}>
 
-                {/* Profile Section */}
-                <View style={styles.section}>
-                    <Text style={styles.sectionHeader}>Account</Text>
-                    <View style={styles.card}>
-                        <View style={styles.profileHeader}>
-                            <View style={styles.avatar}>
-                                <Text style={styles.avatarText}>🐶</Text>
-                            </View>
-                            <View>
-                                <Text style={styles.profileName}>Dog Lover</Text>
-                                <Text style={styles.profileEmail}>user@example.com</Text>
-                            </View>
+                {/* Profile Badge */}
+                <Card variant="glass" style={styles.profileCard}>
+                    <View style={styles.profileHeader}>
+                        <View style={styles.avatar}>
+                            <Text style={styles.avatarText}>🐶</Text>
+                        </View>
+                        <View>
+                            <Text style={styles.profileName}>Dog Lover</Text>
+                            <Text style={styles.profileEmail}>user@example.com</Text>
+                        </View>
+                        {/* Premium Badge */}
+                        <View style={{ flex: 1, alignItems: 'flex-end' }}>
+                            {useSettingsStore().isPremium ? (
+                                <View style={styles.premiumBadge}>
+                                    <Text style={styles.premiumText}>PRO</Text>
+                                </View>
+                            ) : (
+                                <TouchableOpacity onPress={() => useSettingsStore.getState().setPremiumStatus(true)}>
+                                    <Text style={{ color: theme.colors.primary, fontWeight: 'bold' }}>UPGRADE</Text>
+                                </TouchableOpacity>
+                            )}
                         </View>
                     </View>
-                </View>
+                </Card>
 
-                {/* General Settings */}
-                <View style={styles.section}>
-                    <Text style={styles.sectionHeader}>Preferences</Text>
-                    <View style={styles.card}>
-                        <SettingItem
-                            icon="volume-high-outline"
-                            title="Auto-Speak Results"
-                            value={autoSpeak}
-                            onToggle={toggleAutoSpeak}
-                        />
-                        <View style={styles.divider} />
-                        <SettingItem
-                            icon="notifications-outline"
-                            title="Notifications"
-                            value={notifications}
-                            onToggle={setNotifications}
-                        />
-                        <View style={styles.divider} />
-                        <SettingItem
-                            icon="cellular-outline"
-                            title="Data Saver"
-                            value={dataSaver}
-                            onToggle={setDataSaver}
-                        />
-                    </View>
-                </View>
+                {/* Preferences */}
+                <Text style={styles.sectionHeader}>PREFERENCES</Text>
+                <Card variant="default" style={styles.card}>
+                    <SettingItem
+                        icon="volume-high-outline"
+                        title="Auto-Speak Results"
+                        value={autoSpeak}
+                        onToggle={toggleAutoSpeak}
+                    />
+                    <View style={styles.divider} />
+                    <SettingItem
+                        icon="notifications-outline"
+                        title="Notifications"
+                        value={notifications}
+                        onToggle={setNotifications}
+                    />
+                    <View style={styles.divider} />
+                    <SettingItem
+                        icon="cellular-outline"
+                        title="Data Saver"
+                        value={dataSaver}
+                        onToggle={setDataSaver}
+                    />
+                </Card>
 
-                {/* Developer Settings */}
-                <View style={styles.section}>
-                    <Text style={styles.sectionHeader}>Developer</Text>
-                    <View style={styles.card}>
-                        <SettingItem
-                            icon="construct-outline"
-                            title="Debug Mode"
-                            value={debugMode}
-                            onToggle={setDebugMode}
-                        />
-                        {debugMode && (
-                            <>
-                                <View style={styles.divider} />
-                                <SettingItem
-                                    icon="swap-horizontal-outline"
-                                    title="Use Fetch API (Legacy)"
-                                    value={useFetch}
-                                    onToggle={setUseFetch}
-                                />
-                            </>
-                        )}
-                    </View>
-                </View>
+                {/* Developer */}
+                <Text style={styles.sectionHeader}>DEVELOPER</Text>
+                <Card variant="default" style={styles.card}>
+                    <SettingItem
+                        icon="construct-outline"
+                        title="Debug Mode"
+                        value={debugMode}
+                        onToggle={setDebugMode}
+                    />
+                    {debugMode && (
+                        <>
+                            <View style={styles.divider} />
+                            <SettingItem
+                                icon="swap-horizontal-outline"
+                                title="Use Fetch API (Legacy)"
+                                value={useFetch}
+                                onToggle={setUseFetch}
+                            />
+                        </>
+                    )}
+                </Card>
 
                 {/* Actions */}
-                <View style={styles.section}>
-                    <View style={styles.card}>
-                        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-                            <Text style={styles.logoutText}>Log Out</Text>
-                        </TouchableOpacity>
-                    </View>
+                <View style={styles.actionContainer}>
+                    <Button
+                        title="Log Out"
+                        onPress={handleLogout}
+                        variant="outline"
+                        style={{ borderColor: theme.colors.error }}
+                        textStyle={{ color: theme.colors.error }}
+                        icon={<Ionicons name="log-out-outline" size={20} color={theme.colors.error} />}
+                    />
                 </View>
 
                 <Text style={styles.versionText}>Dog Translator v1.0.0</Text>
+                <Text style={styles.copyrightText}>Made with ❤️ for pets</Text>
             </ScrollView>
-        </View>
+        </ScreenWrapper>
     );
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#1a1a2e',
-    },
     content: {
-        padding: 20,
-    },
-    section: {
-        marginBottom: 25,
+        padding: theme.spacing.m,
+        paddingBottom: 100,
     },
     sectionHeader: {
-        color: 'rgba(255,255,255,0.6)',
-        fontSize: 13,
-        fontWeight: '600',
-        marginBottom: 10,
-        marginLeft: 5,
-        textTransform: 'uppercase',
+        ...theme.typography.caption,
+        color: theme.colors.textSecondary,
+        marginBottom: theme.spacing.s,
+        marginTop: theme.spacing.l,
+        marginLeft: theme.spacing.xs,
         letterSpacing: 1,
     },
     card: {
-        backgroundColor: 'rgba(255,255,255,0.05)',
-        borderRadius: 16,
-        overflow: 'hidden',
+        padding: 0,
+    },
+    profileCard: {
+        marginBottom: theme.spacing.m,
+        borderColor: theme.colors.primary,
         borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.1)',
+    },
+    profileHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    avatar: {
+        width: 50,
+        height: 50,
+        borderRadius: 25,
+        backgroundColor: theme.colors.primary,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: theme.spacing.m,
+    },
+    avatarText: {
+        fontSize: 24,
+    },
+    profileName: {
+        ...theme.typography.h3,
+        marginBottom: 2,
+    },
+    profileEmail: {
+        ...theme.typography.body,
+        color: theme.colors.textSecondary,
+        fontSize: 14,
     },
     settingItem: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: 16,
+        padding: theme.spacing.m,
     },
     settingLeft: {
         flexDirection: 'row',
@@ -187,59 +213,44 @@ const styles = StyleSheet.create({
         width: 32,
         height: 32,
         borderRadius: 8,
-        backgroundColor: 'rgba(255,255,255,0.1)',
+        backgroundColor: theme.colors.surfaceLight,
         justifyContent: 'center',
         alignItems: 'center',
-        marginRight: 12,
+        marginRight: theme.spacing.m,
     },
     settingTitle: {
+        ...theme.typography.body,
         color: '#fff',
-        fontSize: 16,
     },
     divider: {
         height: 1,
-        backgroundColor: 'rgba(255,255,255,0.05)',
-        marginLeft: 60,
+        backgroundColor: theme.colors.cardBorder,
+        marginLeft: 56, // Align with text
     },
-    profileHeader: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        padding: 16,
-    },
-    avatar: {
-        width: 50,
-        height: 50,
-        borderRadius: 25,
-        backgroundColor: theme.colors.primary,
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginRight: 15,
-    },
-    avatarText: {
-        fontSize: 24,
-    },
-    profileName: {
-        color: '#fff',
-        fontSize: 18,
-        fontWeight: 'bold',
-    },
-    profileEmail: {
-        color: 'rgba(255,255,255,0.6)',
-        fontSize: 14,
-    },
-    logoutButton: {
-        padding: 16,
-        alignItems: 'center',
-    },
-    logoutText: {
-        color: '#ff4444',
-        fontSize: 16,
-        fontWeight: 'bold',
+    actionContainer: {
+        marginTop: theme.spacing.xl,
     },
     versionText: {
         textAlign: 'center',
-        color: 'rgba(255,255,255,0.3)',
+        color: theme.colors.textSecondary,
         fontSize: 12,
-        marginTop: 10,
+        marginTop: theme.spacing.xl,
+    },
+    copyrightText: {
+        textAlign: 'center',
+        color: 'rgba(255,255,255,0.2)',
+        fontSize: 10,
+        marginTop: 4,
+    },
+    premiumBadge: {
+        backgroundColor: '#FFD700',
+        paddingHorizontal: 8,
+        paddingVertical: 2,
+        borderRadius: 4,
+    },
+    premiumText: {
+        color: '#000',
+        fontWeight: 'bold',
+        fontSize: 12,
     }
 });

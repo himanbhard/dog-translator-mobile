@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { auth } from '../config/firebase';
 import { Logger } from '../services/Logger';
+import { getAppCheckToken } from '../services/appCheck';
 
 // Google Cloud Run Endpoint
 const API_URL = 'https://dog-translator-service-736369571076.us-east1.run.app';
@@ -35,11 +36,27 @@ client.interceptors.request.use(
             config.headers.Authorization = `Bearer ${token} `;
         }
 
+        // Get App Check token
+        let appCheckToken: string | null = null;
+        try {
+            // const { getAppCheckToken } = await import('../services/appCheck');
+            appCheckToken = await getAppCheckToken();
+            if (appCheckToken) {
+                config.headers['X-Firebase-AppCheck'] = appCheckToken;
+                console.warn('✅ App Check Header SET:', appCheckToken.substring(0, 20) + '...');
+            } else {
+                console.error('❌ App Check token is NULL - NO HEADER WILL BE SENT');
+            }
+        } catch (e) {
+            console.error('❌ App Check token fetch FAILED:', e);
+        }
+
 
         // ===== DEBUG LOGGING =====
         console.log('📤 REQUEST DETAILS:');
         console.log('   URL:', (config.baseURL || '') + (config.url || ''));
         console.log('   Method:', config.method);
+        console.log('   Has X-Firebase-AppCheck?', !!config.headers['X-Firebase-AppCheck']);
         console.log('   Headers:', JSON.stringify(config.headers, null, 2));
 
         if (config.data instanceof FormData) {

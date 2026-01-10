@@ -1,16 +1,11 @@
-import { Ionicons } from '@expo/vector-icons';
-import Constants from 'expo-constants';
-import * as AppleAuthentication from 'expo-apple-authentication';
-import { makeRedirectUri } from 'expo-auth-session';
-import * as Google from 'expo-auth-session/providers/google';
-import * as WebBrowser from 'expo-web-browser';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, StyleSheet, Text, TextInput, TouchableOpacity, View, Platform } from 'react-native';
 import { login, register } from '../api/auth';
 import { isAppleAuthAvailable, signInWithAppleToken, signInWithGoogleToken } from '../api/socialAuth';
 import { theme } from '../styles/theme';
-
-WebBrowser.maybeCompleteAuthSession();
+import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
+// import { appleAuth } from '@invertase/react-native-apple-authentication';
 
 interface LoginScreenProps {
     onLoginSuccess: () => void;
@@ -23,33 +18,17 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
     const [loading, setLoading] = useState(false);
     const [appleAuthAvailable, setAppleAuthAvailable] = useState(false);
 
-    // Google Sign-In Hook
-    // Construct the Proxy Redirect URI dynamically
-    const owner = Constants.expoConfig?.owner || 'anonymous';
-    const slug = Constants.expoConfig?.slug || 'dog-translator-android';
-    const proxyRedirectUri = `https://auth.expo.io/@${owner}/${slug}`;
-
-    // Google Sign-In Hook - using the proxy URI for Expo Go compatibility
-    const [request, response, promptAsync] = Google.useAuthRequest({
-        webClientId: '736369571076-4oag5ad2rss77dflac5uiemfiohk3cn7.apps.googleusercontent.com',
-        iosClientId: '736369571076-4oag5ad2rss77dflac5uiemfiohk3cn7.apps.googleusercontent.com',
-        androidClientId: '736369571076-4oag5ad2rss77dflac5uiemfiohk3cn7.apps.googleusercontent.com',
-        redirectUri: proxyRedirectUri
-    });
-
     useEffect(() => {
         checkAppleAuth();
+        configureGoogleSignIn();
     }, []);
 
-    useEffect(() => {
-        if (response?.type === 'success') {
-            const { id_token } = response.params;
-            handleGoogleToken(id_token);
-        } else if (response?.type === 'error') {
-            Alert.alert('Google Sign-In Error', response.error?.message || 'Unknown error');
-            setLoading(false);
-        }
-    }, [response]);
+    const configureGoogleSignIn = () => {
+        GoogleSignin.configure({
+            webClientId: '736369571076-4oag5ad2rss77dflac5uiemfiohk3cn7.apps.googleusercontent.com',
+            offlineAccess: true,
+        });
+    };
 
     const checkAppleAuth = async () => {
         const available = await isAppleAuthAvailable();
@@ -60,7 +39,7 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
         setLoading(true);
         try {
             await signInWithGoogleToken(token);
-            // Success handled by auth listener in App.tsx
+            onLoginSuccess(); // Use prop callback
         } catch (error: any) {
             Alert.alert('Google Login Failed', error.message);
             setLoading(false);
@@ -80,6 +59,7 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
             } else {
                 await register(email, password);
             }
+            onLoginSuccess();
         } catch (error: any) {
             const message = error.message || (isLogin ? 'Login failed' : 'Registration failed');
             Alert.alert('Error', message);
@@ -88,16 +68,27 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
     };
 
     const handleGoogleSignIn = async () => {
-        // Use expo-auth-session prompt
         try {
-            console.log("🔵 DEBUG: Starting Google Sign-In");
-            console.log("   🔗 REQUIRED REDIRECT URI (USE THIS):", proxyRedirectUri);
-            console.log("   (Add this exact URI to Google Cloud Console > Web Client ID)");
-
-            await promptAsync();
+            await GoogleSignin.hasPlayServices();
+            const userInfo = await GoogleSignin.signIn();
+            const token = userInfo.data?.idToken;
+            if (token) {
+                handleGoogleToken(token);
+            } else {
+                throw new Error('No ID token from Google');
+            }
         } catch (error: any) {
-            console.error("🔴 Google Sign-In Exception:", error);
-            Alert.alert('Google Sign-In Error', error.message);
+            if (error.code === statusCodes.SIGN_IN_CANCELLED) {
+                // user cancelled the login flow
+            } else if (error.code === statusCodes.IN_PROGRESS) {
+                // operation (e.g. sign in) is in progress already
+            } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+                // play services not available or outdated
+                Alert.alert('Error', 'Play Services not available');
+            } else {
+                console.error("Google Sign-In Exception:", error);
+                Alert.alert('Google Sign-In Error', error.message || 'Unknown error');
+            }
             setLoading(false);
         }
     };
@@ -105,28 +96,29 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
     const handleAppleSignIn = async () => {
         setLoading(true);
         try {
-            // Check if Apple Authentication is available (iOS 13+)
-            const isAvailable = await AppleAuthentication.isAvailableAsync();
-            if (!isAvailable) throw new Error('Apple Sign-In is not available');
-
-            const credential = await AppleAuthentication.signInAsync({
-                requestedScopes: [
-                    AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
-                    AppleAuthentication.AppleAuthenticationScope.EMAIL,
-                ],
+            /*
+            // Start the sign-in request
+            const appleAuthRequestResponse = await appleAuth.performRequest({
+                requestedOperation: appleAuth.Operation.LOGIN,
+                requestedScopes: [appleAuth.Scope.EMAIL, appleAuth.Scope.FULL_NAME],
             });
 
-            // Sign in with Firebase using the Apple credential
-            if (credential.identityToken) {
-                await signInWithAppleToken(credential.identityToken, credential.authorizationCode!);
+            const { identityToken, nonce } = appleAuthRequestResponse;
+
+            if (identityToken) {
+                await signInWithAppleToken(identityToken, nonce);
+                onLoginSuccess();
             } else {
                 throw new Error('No identity token received from Apple');
             }
-            // Success handled by auth listener
+            */
+            Alert.alert('Not Supported', 'Apple Sign-In is disabled in development mode.');
         } catch (error: any) {
-            if (error.code !== 'ERR_REQUEST_CANCELED') {
+            /*
+            if (error.code !== appleAuth.Error.CANCELED) {
                 Alert.alert('Apple Sign-In Failed', error.message);
             }
+            */
             setLoading(false);
         }
     };

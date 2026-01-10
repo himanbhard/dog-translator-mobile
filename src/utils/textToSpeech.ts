@@ -1,4 +1,4 @@
-import * as Speech from 'expo-speech';
+import Tts from 'react-native-tts';
 
 export interface TTSOptions {
     tone?: 'playful' | 'calm' | 'trainer';
@@ -7,82 +7,73 @@ export interface TTSOptions {
     onError?: (error: string) => void;
 }
 
-/**
- * Speak text aloud with tone-specific voice settings
- */
+// Initialize TTS
+Tts.setDefaultLanguage('en-US');
+
+// Tone-specific voice settings (Simulated by pitch/rate since Tts APIs differ)
+const voiceSettings = {
+    playful: {
+        pitch: 1.3,
+        rate: 0.55 // Tts rate is different scale usually 0.0-1.0
+    },
+    calm: {
+        pitch: 0.85,
+        rate: 0.4
+    },
+    trainer: {
+        pitch: 1.0,
+        rate: 0.5
+    },
+};
+
 export const speak = async (text: string, options: TTSOptions = {}) => {
     const { tone = 'playful', onStart, onDone, onError } = options;
 
-    // Stop any ongoing speech first
-    await Speech.stop();
-
-    // Tone-specific voice settings
-    const voiceSettings = {
-        playful: {
-            pitch: 1.3,    // Higher pitch for excitement
-            rate: 1.05     // Slightly faster
-        },
-        calm: {
-            pitch: 0.85,   // Lower, soothing pitch
-            rate: 0.8      // Slower, relaxed pace
-        },
-        trainer: {
-            pitch: 1.0,    // Neutral pitch
-            rate: 0.95     // Clear, steady pace
-        },
-    };
+    await stop();
 
     const settings = voiceSettings[tone];
 
-    console.log(`🔊 Speaking with "${tone}" voice (pitch: ${settings.pitch}, rate: ${settings.rate})`);
+    Tts.setDefaultPitch(settings.pitch);
+    Tts.setDefaultRate(settings.rate);
+
+    // Add listeners (clear previous to avoid dupes)
+    Tts.removeAllListeners('tts-start');
+    Tts.removeAllListeners('tts-finish');
+    Tts.removeAllListeners('tts-error');
 
     return new Promise<boolean>((resolve, reject) => {
-        Speech.speak(text, {
-            language: 'en-US',
-            pitch: settings.pitch,
-            rate: settings.rate,
-            onStart: () => {
-                console.log('🎤 TTS: Speech started');
-                onStart?.();
-            },
-            onDone: () => {
-                console.log('✅ TTS: Speech completed');
-                onDone?.();
-                resolve(true);
-            },
-            onStopped: () => {
-                console.log('⏹️ TTS: Speech stopped');
-                resolve(false);
-            },
-            onError: (error) => {
-                console.error('❌ TTS Error:', error);
-                onError?.(error.toString());
-                reject(error);
-            },
+        Tts.addEventListener('tts-start', () => {
+            console.log('🎤 TTS: Speech started');
+            onStart?.();
         });
+
+        Tts.addEventListener('tts-finish', () => {
+            console.log('✅ TTS: Speech completed');
+            onDone?.();
+            resolve(true);
+        });
+
+        Tts.addEventListener('tts-error', (event: any) => {
+            console.error('❌ TTS Error:', event);
+            onError?.(event.toString());
+            // Don't reject, just resolve false
+            resolve(false);
+        });
+
+        Tts.speak(text);
     });
 };
 
-/**
- * Stop any ongoing speech
- */
 export const stop = async () => {
-    console.log('⏸️ Stopping speech...');
-    await Speech.stop();
+    Tts.stop();
 };
 
-/**
- * Check if currently speaking
- */
 export const isSpeaking = async (): Promise<boolean> => {
-    return await Speech.isSpeakingAsync();
+    // Tts doesn't have isSpeakingAsync equivalent easily, 
+    // we assume false or track state manually if needed.
+    return false;
 };
 
-/**
- * Get list of available voices on the device
- */
 export const getAvailableVoices = async () => {
-    const voices = await Speech.getAvailableVoicesAsync();
-    console.log(`📋 Available voices: ${voices.length}`);
-    return voices;
+    return await Tts.voices();
 };

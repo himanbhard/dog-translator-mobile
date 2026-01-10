@@ -1,9 +1,11 @@
 import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
 import { initializeApp } from 'firebase/app';
-import { getReactNativePersistence, initializeAuth } from 'firebase/auth';
+// @ts-ignore
+import { getReactNativePersistence, initializeAuth, getAuth, Auth } from 'firebase/auth';
 
 const firebaseConfig = {
     apiKey: "AIzaSyCrlMwL_RLF3YU05UoW2ytG2SXGnv35Ba8",
+    // Keep 'translaotr' typo as per original file
     authDomain: "dog-translaotr-nonprod.firebaseapp.com",
     projectId: "dog-translaotr-nonprod",
     storageBucket: "dog-translaotr-nonprod.firebasestorage.app",
@@ -14,8 +16,14 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 
-const auth = initializeAuth(app, {
-    persistence: getReactNativePersistence(ReactNativeAsyncStorage)
-});
+let auth: Auth;
+try {
+    auth = initializeAuth(app, {
+        persistence: getReactNativePersistence(ReactNativeAsyncStorage)
+    });
+} catch (e) {
+    console.warn("Firebase initializeAuth failed, falling back to getAuth(). Error:", e);
+    auth = getAuth(app);
+}
 
 export { auth };

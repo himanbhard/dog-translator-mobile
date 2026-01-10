@@ -1,15 +1,15 @@
-import { copyAsync, deleteAsync, documentDirectory, getInfoAsync, makeDirectoryAsync } from 'expo-file-system/legacy';
+import RNFS from 'react-native-fs';
 
-const IMAGES_DIR = (documentDirectory || '') + 'images/';
+const IMAGES_DIR = RNFS.DocumentDirectoryPath + '/images/';
 
 /**
  * Ensures the images directory exists.
  */
 const ensureDirExists = async () => {
-    const dirInfo = await getInfoAsync(IMAGES_DIR);
-    if (!dirInfo.exists) {
+    const exists = await RNFS.exists(IMAGES_DIR);
+    if (!exists) {
         console.log("Creating images directory...");
-        await makeDirectoryAsync(IMAGES_DIR, { intermediates: true });
+        await RNFS.mkdir(IMAGES_DIR);
     }
 };
 
@@ -22,6 +22,13 @@ export const saveImageToStorage = async (tempUri: string): Promise<string> => {
     try {
         await ensureDirExists();
 
+        // Handle file:// prefix if missing
+        let sourcePath = tempUri;
+        if (!sourcePath.startsWith('file://') && !sourcePath.startsWith('/')) {
+            // If it's a content uri or something else, RNFS might need help, 
+            // but usually camera returns file:// or absolute path.
+        }
+
         // Generate unique filename
         const timestamp = Date.now();
         const ext = tempUri.split('.').pop() || 'jpg';
@@ -29,10 +36,7 @@ export const saveImageToStorage = async (tempUri: string): Promise<string> => {
         const destPath = IMAGES_DIR + filename;
 
         // Copy the file
-        await copyAsync({
-            from: tempUri,
-            to: destPath
-        });
+        await RNFS.copyFile(sourcePath, destPath);
 
         return filename;
     } catch (error) {
@@ -48,7 +52,9 @@ export const saveImageToStorage = async (tempUri: string): Promise<string> => {
 export const deleteImageFromStorage = async (filename: string): Promise<void> => {
     try {
         const path = IMAGES_DIR + filename;
-        await deleteAsync(path, { idempotent: true });
+        if (await RNFS.exists(path)) {
+            await RNFS.unlink(path);
+        }
     } catch (error) {
         console.error(`Error deleting image ${filename}:`, error);
         // We generally don't throw here to avoid blocking UI if cleanup fails
@@ -60,5 +66,5 @@ export const deleteImageFromStorage = async (filename: string): Promise<void> =>
  * Use this when displaying the image in <Image source={{ uri: ... }} />
  */
 export const getImageUri = (filename: string): string => {
-    return IMAGES_DIR + filename;
+    return 'file://' + IMAGES_DIR + filename;
 };

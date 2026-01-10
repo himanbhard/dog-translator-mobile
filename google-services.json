@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "736369571076",
+    "project_id": "dog-translaotr-nonprod",
+    "storage_bucket": "dog-translaotr-nonprod.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:736369571076:android:dbc8dd7dff8d49d02bcc51",
+        "android_client_info": {
+          "package_name": "com.anonymous.dogtranslatorandroid"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "736369571076-p86g3sh3kejqgqp25t9t6r5sq9kn8dh8.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.anonymous.dogtranslatorandroid",
+            "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
+          }
+        },
+        {
+          "client_id": "736369571076-i44v2mggoqmegi7tsk7lsb40lfonmq24.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBOSU2aa7psOu018G8iXSsz14i81fuzXIM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "736369571076-4oag5ad2rss77dflac5uiemfiohk3cn7.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "736369571076-nl88m7nkgh81qlcf365fnq6uoq094epg.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.anonymous.dogtranslatorandroid"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

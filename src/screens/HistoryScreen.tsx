@@ -1,20 +1,24 @@
-import { useFocusEffect } from '@react-navigation/native';
-import { BlurView } from 'expo-blur';
-import { LinearGradient } from 'expo-linear-gradient';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import React, { useCallback, useState } from 'react';
-import { Alert, FlatList, Image, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, FlatList, RefreshControl, StyleSheet, Text, TouchableOpacity, View, Image } from 'react-native';
 import { deleteImageFromStorage, getImageUri } from '../services/fileStorage';
 import { HistoryItem, deleteHistoryItem, getHistoryItems } from '../services/historyDatabase';
 import { theme } from '../styles/theme';
+import { ScreenWrapper } from '../components/ui/ScreenWrapper';
+import { Card } from '../components/ui/Card';
+import Ionicons from 'react-native-vector-icons/Ionicons';
+import { usePetStore } from '../store/usePetStore';
 
 export default function HistoryScreen() {
     const [history, setHistory] = useState<HistoryItem[]>([]);
     const [refreshing, setRefreshing] = useState(false);
+    const navigation = useNavigation();
+    const { activePetId } = usePetStore(); // Get active pet
 
     const loadData = async () => {
         setRefreshing(true);
         try {
-            const items = await getHistoryItems();
+            const items = await getHistoryItems(activePetId);
             setHistory(items);
         } catch (e) {
             console.error("Failed to load history", e);
@@ -26,7 +30,7 @@ export default function HistoryScreen() {
     useFocusEffect(
         useCallback(() => {
             loadData();
-        }, [])
+        }, [activePetId])
     );
 
     const handleDelete = (id: number, filename: string) => {
@@ -48,16 +52,39 @@ export default function HistoryScreen() {
         );
     };
 
+    const handlePressItem = (item: HistoryItem) => {
+        (navigation as any).navigate('HistoryDetail', {
+            id: item.id,
+            filename: item.filename,
+            explanation: item.explanation,
+            confidence: item.confidence,
+            tone: item.tone,
+            breed: item.breed || 'Unknown Mix',
+            timestamp: item.timestamp,
+            share_id: item.share_id,
+            detailed_explanation: item.detailed_explanation,
+            educational_links: item.educational_links
+        });
+    };
+
     const renderItem = ({ item }: { item: HistoryItem }) => {
         const date = new Date(item.timestamp).toLocaleDateString();
         const time = new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         const imageSource = { uri: getImageUri(item.filename) };
 
         return (
-            <View style={styles.cardContainer}>
-                <BlurView intensity={20} tint="dark" style={styles.card}>
+            <TouchableOpacity
+                activeOpacity={0.9}
+                onPress={() => handlePressItem(item)}
+                style={styles.cardWrapper}
+            >
+                <Card variant="default" style={styles.card}>
                     <View style={styles.imageContainer}>
-                        <Image source={imageSource} style={styles.image} resizeMode="cover" />
+                        <Image
+                            source={imageSource}
+                            style={styles.image}
+                            resizeMode="cover"
+                        />
                         <View style={styles.toneBadge}>
                             <Text style={styles.toneText}>{item.tone || 'Neutral'}</Text>
                         </View>
@@ -65,35 +92,38 @@ export default function HistoryScreen() {
 
                     <View style={styles.contentContainer}>
                         <View style={styles.headerRow}>
-                            <Text style={styles.dateText}>{date} • {time}</Text>
+                            <View>
+                                <Text style={styles.dateText}>{date} • {time}</Text>
+                                {item.breed && <Text style={styles.breedText}>{item.breed}</Text>}
+                            </View>
                             <TouchableOpacity onPress={() => handleDelete(item.id, item.filename)} hitSlop={10}>
-                                <Text style={styles.deleteIcon}>🗑️</Text>
+                                <Ionicons name="trash-outline" size={20} color={theme.colors.error} />
                             </TouchableOpacity>
                         </View>
 
-                        <Text style={styles.explanationText} numberOfLines={3}>
+                        <Text style={styles.explanationText} numberOfLines={2}>
                             {item.explanation}
                         </Text>
 
                         {item.confidence > 0 && (
-                            <Text style={styles.confidenceText}>
-                                Confidence: {(item.confidence * 100).toFixed(0)}%
-                            </Text>
+                            <View style={styles.confidenceRow}>
+                                <Ionicons name="checkmark-circle-outline" size={14} color={theme.colors.success} />
+                                <Text style={styles.confidenceText}>
+                                    {(item.confidence * 100).toFixed(0)}% Confidence
+                                </Text>
+                            </View>
                         )}
                     </View>
-                </BlurView>
-            </View>
+                </Card>
+            </TouchableOpacity>
         );
     };
 
     return (
-        <View style={styles.container}>
-            <LinearGradient
-                colors={['#1a1a2e', '#16213e', '#0f3460']}
-                style={StyleSheet.absoluteFill}
-            />
+        <ScreenWrapper>
             {history.length === 0 && !refreshing ? (
                 <View style={styles.emptyContainer}>
+                    <Ionicons name="book-outline" size={60} color={theme.colors.textSecondary} />
                     <Text style={styles.emptyText}>No memories yet.</Text>
                     <Text style={styles.emptySubText}>Translate some dog behaviors to start your journal!</Text>
                 </View>
@@ -104,35 +134,28 @@ export default function HistoryScreen() {
                     renderItem={renderItem}
                     contentContainerStyle={styles.listContent}
                     refreshControl={
-                        <RefreshControl refreshing={refreshing} onRefresh={loadData} tintColor="#fff" />
+                        <RefreshControl refreshing={refreshing} onRefresh={loadData} tintColor={theme.colors.primary} />
                     }
                 />
             )}
-        </View>
+        </ScreenWrapper>
     );
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#1a1a2e',
-    },
     listContent: {
-        padding: 16,
-        paddingBottom: 40,
+        padding: theme.spacing.m,
+        paddingBottom: 100, // Space for tab bar
     },
-    cardContainer: {
-        marginBottom: 16,
-        borderRadius: 16,
-        overflow: 'hidden',
-        borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.1)',
+    cardWrapper: {
+        marginBottom: theme.spacing.m,
     },
     card: {
-        backgroundColor: 'rgba(255,255,255,0.05)',
+        padding: 0, // Reset default padding for image layout
+        overflow: 'hidden',
     },
     imageContainer: {
-        height: 200,
+        height: 180,
         width: '100%',
         backgroundColor: '#000',
     },
@@ -145,62 +168,70 @@ const styles = StyleSheet.create({
         top: 10,
         right: 10,
         backgroundColor: 'rgba(0,0,0,0.6)',
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        borderRadius: 20,
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        borderRadius: 12,
         borderWidth: 1,
         borderColor: 'rgba(255,255,255,0.2)',
     },
     toneText: {
         color: '#fff',
-        fontWeight: '600',
-        fontSize: 12,
-        textTransform: 'capitalize',
+        fontWeight: 'bold',
+        fontSize: 10,
+        textTransform: 'uppercase',
     },
     contentContainer: {
-        padding: 16,
+        padding: theme.spacing.m,
     },
     headerRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 8,
+        marginBottom: theme.spacing.s,
     },
     dateText: {
-        color: 'rgba(255,255,255,0.6)',
-        fontSize: 12,
+        color: '#fff',
+        fontWeight: 'bold',
+        fontSize: 14,
     },
-    deleteIcon: {
-        fontSize: 18,
-        opacity: 0.8,
+    breedText: {
+        color: theme.colors.primary,
+        fontSize: 12,
+        marginTop: 2,
+    },
+    timeText: {
+        color: theme.colors.textSecondary,
+        fontSize: 12,
     },
     explanationText: {
-        color: '#fff',
-        fontSize: 15,
-        lineHeight: 22,
-        marginBottom: 8,
+        ...theme.typography.body,
+        fontSize: 14,
+        marginBottom: theme.spacing.s,
+    },
+    confidenceRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
     },
     confidenceText: {
-        color: theme.colors.primary, // Using theme primary color if available, or fallback
+        color: theme.colors.success,
         fontSize: 12,
         fontWeight: 'bold',
-        marginTop: 4,
+        marginLeft: 4,
     },
     emptyContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        padding: 30,
+        padding: 40,
     },
     emptyText: {
-        color: '#fff',
-        fontSize: 20,
-        fontWeight: 'bold',
+        ...theme.typography.h2,
+        marginTop: 20,
         marginBottom: 10,
     },
     emptySubText: {
-        color: 'rgba(255,255,255,0.5)',
-        fontSize: 16,
+        ...theme.typography.body,
         textAlign: 'center',
+        color: theme.colors.textSecondary,
     },
 });

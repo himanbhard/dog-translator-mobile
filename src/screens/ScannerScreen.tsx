@@ -1,11 +1,11 @@
-import { BlurView } from 'expo-blur';
-import { CameraView, useCameraPermissions } from 'expo-camera';
-import * as ImagePicker from 'expo-image-picker';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
+import { BlurView } from '@react-native-community/blur';
+import { Camera, useCameraDevice, useCameraPermission } from 'react-native-vision-camera';
+import { launchImageLibrary } from 'react-native-image-picker';
+import { Image } from 'react-native';
+import LinearGradient from 'react-native-linear-gradient';
 import LottieView from 'lottie-react-native';
 import React, { useEffect, useRef, useState } from 'react';
-import { Alert, Dimensions, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, StatusBar, StyleSheet, Text, TouchableOpacity, View, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { analyzeImage } from '../api/analysisService';
 import { saveImageToStorage } from '../services/fileStorage';
@@ -13,71 +13,99 @@ import { addHistoryItem } from '../services/historyDatabase';
 import { useSettingsStore } from '../store/settingsStore';
 import { theme } from '../styles/theme';
 import { speak, stop as stopSpeech } from '../utils/textToSpeech';
-
-const { width } = Dimensions.get('window');
+import { Button } from '../components/ui/Button';
+import Ionicons from 'react-native-vector-icons/Ionicons';
+import PaywallScreen from './PaywallScreen';
+import NetInfo from '@react-native-community/netinfo';
+import { addToQueue } from '../services/offlineQueue';
+import { usePetStore } from '../store/usePetStore';
+import { PetJournalService } from '../services/petJournal';
+import { useNavigation } from '@react-navigation/native';
+import ExplanationModal from '../components/ExplanationModal';
 
 type Tone = 'Playful' | 'Calm' | 'Trainer';
 
 export default function ScannerScreen() {
-    const [permission, requestPermission] = useCameraPermissions();
+    const { hasPermission, requestPermission } = useCameraPermission();
+    const device = useCameraDevice('back');
     const [tone, setTone] = useState<Tone>('Playful');
-    const cameraRef = useRef<CameraView>(null);
+    const cameraRef = useRef<Camera>(null);
     const [isanalyzing, setIsAnalyzing] = useState(false);
-
-    // Debug toggle removed - default to standard behavior
-    // Debug toggle removed - default to standard behavior
     const [isSpeaking, setIsSpeaking] = useState(false);
-    const { autoSpeak } = useSettingsStore(); // Use global setting
-    // Router no longer needed for direct history navigation? 
-    // Actually, we might keep it if we want to programmatically nav, 
-    // but the Tabs handle it. Removing unused valid ref if unused.
-    const router = useRouter();
+    const { autoSpeak, isPremium, dailyScans, incrementScanCount, checkResetDailyScans } = useSettingsStore();
+    const [showPaywall, setShowPaywall] = useState(false);
+
+    // Explanation Feature
+    const [explanationVisible, setExplanationVisible] = useState(false);
+    const [lastAnalysisResult, setLastAnalysisResult] = useState<{ translation: string, breed?: string, petId?: string, journalId?: string } | null>(null);
+
+    // Pet Integration
+    const { getActivePet, activePetId } = usePetStore();
+    const activePet = getActivePet();
+    const navigation = useNavigation();
+
+    // Initial check for daily reset
+    useEffect(() => {
+        checkResetDailyScans();
+    }, []);
 
     useEffect(() => {
-        if (!permission?.granted) {
+        if (!hasPermission) {
             requestPermission();
         }
-    }, [permission]);
+    }, [hasPermission]);
 
-    if (!permission) {
-        // Camera permissions are still loading
-        return <View style={styles.container} />;
-    }
+    if (!hasPermission) return <View style={styles.container} />;
 
-    if (!permission.granted) {
-        // Camera permissions are not granted yet
+    if (!device) {
         return (
-            <View style={styles.container}>
-                <Text style={{ textAlign: 'center', color: theme.colors.text }}>We need your permission to show the camera</Text>
-                <TouchableOpacity onPress={requestPermission} style={styles.button}>
-                    <Text style={styles.buttonText}>Grant Permission</Text>
-                </TouchableOpacity>
+            <View style={[styles.container, styles.centerContent]}>
+                <Text style={styles.permissionText}>No camera device found!</Text>
             </View>
-        );
+        )
     }
 
     const handleAnalysis = async (uri: string) => {
+        // 0. Network Check
+        const state = await NetInfo.fetch();
+        if (!state.isConnected) {
+            Alert.alert(
+                "Offline 📴",
+                "You are currently offline. We can save this scan to the queue and process it later.",
+                [
+                    { text: "Cancel", style: "cancel" },
+                    {
+                        text: "Save to Queue",
+                        onPress: async () => {
+                            const success = await addToQueue(uri, tone);
+                            if (success) Alert.alert("Saved", "Will process when back online!");
+                        }
+                    }
+                ]
+            );
+            return;
+        }
+
+        // 1. Freemium Check
+        if (!isPremium && dailyScans >= 5) {
+            setShowPaywall(true);
+            return;
+        }
+
         setIsAnalyzing(true);
-        console.log(`🎵 Tone: ${tone.toLowerCase()}`);
-
-        // Always use standard analyzeImage (Axios/modern) - Debug removed from UI
         const result = await analyzeImage(uri, tone.toLowerCase());
-
         setIsAnalyzing(false);
 
         if (result) {
-            // Check for "No Dog" case (Zero confidence means detection failed)
+            // 2. Increment Usage if successful
+            incrementScanCount();
+
             if (result.confidence === 0) {
-                Alert.alert(
-                    'No Dog Found 🧐',
-                    result.explanation || "We couldn't detect a dog in the picture. Please try again with a clear photo of a dog!",
-                    [{ text: 'Okay' }]
-                );
+                Alert.alert('No Dog Found 🧐', result.explanation || "Try again with a clear photo!", [{ text: 'Okay' }]);
                 return;
             }
 
             if (result.status === 'ok') {
-                // Auto-speak if enabled
                 if (autoSpeak) {
                     setIsSpeaking(true);
                     speak(result.explanation, {
@@ -87,25 +115,51 @@ export default function ScannerScreen() {
                     }).catch(() => setIsSpeaking(false));
                 }
 
-                // Show alert with manual speak and save options
+                const breedText = result.breed ? `\n🐶 Breed: ${result.breed}` : '';
+
                 Alert.alert(
                     '🐕 Dog Says:',
-                    `${result.explanation}\n\n✅ Confidence: ${(result.confidence * 100).toFixed(0)}%`,
+                    `${result.explanation}${breedText}\n\n✅ Confidence: ${(result.confidence * 100).toFixed(0)}%`,
                     [
                         {
                             text: '💾 Save',
                             onPress: async () => {
                                 try {
                                     const filename = await saveImageToStorage(uri);
+
+
+                                    // 1. Legacy Global History (Now Pet Aware)
                                     await addHistoryItem(
                                         filename,
                                         result.explanation,
                                         result.confidence,
-                                        tone
+                                        tone,
+                                        result.breed || 'Unknown Mix', // Pass breed
+                                        result.share_id || '', // Pass share_id
+                                        activePetId // Pass pet_id
                                     );
-                                    Alert.alert("Saved", "Added to your journal!");
+
+                                    // 2. Pet Journal (if pet selected)
+                                    if (activePetId) {
+                                        const entry = await PetJournalService.addEntry(
+                                            activePetId,
+                                            filename,
+                                            result.explanation,
+                                            result.confidence,
+                                            result.breed // Pass breed
+                                        );
+                                        // Update state with journal details for explanation context
+                                        setLastAnalysisResult({
+                                            translation: result.explanation,
+                                            breed: result.breed,
+                                            petId: activePetId,
+                                            journalId: entry.id
+                                        });
+                                    }
+
+                                    Alert.alert("Saved", activePet ? `Added to ${activePet.name}'s journal!` : "Added to your journal!");
                                 } catch (e) {
-                                    Alert.alert("Error", "Failed to save to journal.");
+                                    Alert.alert("Error", "Failed to save.");
                                 }
                             }
                         },
@@ -128,24 +182,19 @@ export default function ScannerScreen() {
                     ]
                 );
             } else {
-                Alert.alert(
-                    '❌ Error',
-                    result.error || 'Unable to interpret the image'
-                );
+                Alert.alert('❌ Error', result.error || 'Unable to interpret the image');
             }
         }
     };
 
     const pickImage = async () => {
-        let result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.Images,
-            allowsEditing: true,
-            aspect: [4, 3],
+        const result = await launchImageLibrary({
+            mediaType: 'photo',
             quality: 1,
+            includeBase64: false,
         });
 
-        if (!result.canceled) {
-            console.log(result.assets[0].uri);
+        if (!result.didCancel && result.assets && result.assets[0].uri) {
             handleAnalysis(result.assets[0].uri);
         }
     };
@@ -153,14 +202,14 @@ export default function ScannerScreen() {
     const takePicture = async () => {
         if (cameraRef.current) {
             try {
-                // setIsAnalyzing(true); // Moved to handleAnalysis
-                const photo = await cameraRef.current.takePictureAsync({ quality: 0.7 });
-                if (photo?.uri) {
-                    handleAnalysis(photo.uri);
+                const photo = await cameraRef.current.takePhoto({ qualityPrioritization: 'quality' });
+                // Photo path is usually file://...
+                if (photo?.path) {
+                    const uri = 'file://' + photo.path;
+                    handleAnalysis(uri);
                 }
             } catch (error) {
                 console.error(error);
-                setIsAnalyzing(false);
             }
         }
     };
@@ -168,16 +217,38 @@ export default function ScannerScreen() {
     return (
         <View style={styles.container}>
             <StatusBar barStyle="light-content" />
-            <CameraView style={styles.camera} ref={cameraRef} />
+            <Camera
+                style={styles.camera}
+                device={device}
+                isActive={true}
+                photo={true}
+                ref={cameraRef}
+            />
+
             <SafeAreaView style={styles.overlay} pointerEvents="box-none">
                 {/* Header */}
-                <BlurView intensity={20} tint="dark" style={styles.headerGlass}>
+                <BlurView blurType="dark" blurAmount={30} style={styles.header}>
                     <Text style={styles.headerTitle}>Dog Translator</Text>
+                    {activePet && (
+                        <TouchableOpacity style={styles.petBadge} onPress={() => navigation.navigate('Pets' as any)}>
+                            <Image
+                                source={activePet.photoUri ? { uri: activePet.photoUri } : { uri: "https://img.freepik.com/free-vector/cute-dog-sitting-cartoon-vector-icon-illustration-animal-nature-icon-concept-isolated-premium-vector-flat-cartoon-style_138676-4103.jpg?w=740" }}
+                                style={styles.petHeaderImage}
+                            />
+                            <Text style={styles.petName}>{activePet.name}</Text>
+                        </TouchableOpacity>
+                    )}
+                    {!activePet && (
+                        <TouchableOpacity style={styles.petBadge} onPress={() => navigation.navigate('Pets' as any)}>
+                            <Ionicons name="paw" size={16} color="#FFF" style={{ marginRight: 4 }} />
+                            <Text style={styles.petName}>Add Pet</Text>
+                        </TouchableOpacity>
+                    )}
                 </BlurView>
 
                 {/* Tone Selector */}
-                <View style={styles.toneContainer}>
-                    <BlurView intensity={30} tint="dark" style={styles.toneSelector}>
+                <View style={styles.toneWrapper}>
+                    <BlurView blurType="dark" blurAmount={40} style={styles.toneSelector}>
                         {(['Playful', 'Calm', 'Trainer'] as Tone[]).map((t) => (
                             <TouchableOpacity
                                 key={t}
@@ -191,56 +262,61 @@ export default function ScannerScreen() {
                 </View>
 
                 {/* Bottom Controls */}
-                <BlurView intensity={40} tint="dark" style={styles.bottomControls}>
-                    <TouchableOpacity onPress={pickImage} style={styles.galleryButton}>
-                        {/* Placeholder for Gallery Icon */}
-                        <Text style={styles.iconText}>🖼️</Text>
-                    </TouchableOpacity>
+                <View style={styles.bottomContainer}>
+                    <BlurView blurType="dark" blurAmount={50} style={styles.controls}>
+                        <TouchableOpacity onPress={pickImage} style={styles.iconButton}>
+                            <Ionicons name="images-outline" size={28} color="#FFF" />
+                        </TouchableOpacity>
 
-                    <TouchableOpacity onPress={takePicture} style={styles.captureButtonOuter}>
-                        <LinearGradient
-                            colors={[theme.colors.primary, '#ff9f43']}
-                            style={styles.captureButtonInner}
-                        />
-                    </TouchableOpacity>
+                        <TouchableOpacity onPress={takePicture} activeOpacity={0.8}>
+                            <LinearGradient
+                                colors={theme.gradients.primary}
+                                style={styles.captureButton}
+                            >
+                                <View style={styles.captureInner} />
+                            </LinearGradient>
+                        </TouchableOpacity>
 
-                    {/* Spacer to balance layout if needed or just remove debug button */}
-                    <View style={styles.spacer} />
-                </BlurView>
+                        <View style={styles.spacer} />
+                    </BlurView>
+                </View>
 
+                {/* Analysis Overlay */}
                 {isanalyzing && (
-                    <View style={styles.analyzingOverlay}>
-                        <BlurView intensity={50} tint="dark" style={StyleSheet.absoluteFill} />
+                    <View style={styles.loadingOverlay}>
+                        <BlurView blurType="dark" blurAmount={80} style={StyleSheet.absoluteFill} />
                         <LottieView
                             autoPlay
                             loop
-                            style={{
-                                width: 200,
-                                height: 200,
-                            }}
-                            source={{ uri: 'https://lottie.host/5a704f46-6014-4632-8419-744319525c34/L1.json' }} // Placeholder generic loader
+                            style={styles.lottie}
+                            source={{ uri: 'https://lottie.host/5a704f46-6014-4632-8419-744319525c34/L1.json' }}
                         />
-                        <Text style={styles.analyzingText}>Analyzing...</Text>
+                        <Text style={styles.loadingText}>Analyzing Body Language...</Text>
                     </View>
                 )}
 
-                {/* Stop Speech Button */}
+                {/* Stop Speech FAB */}
                 {isSpeaking && (
-                    <View style={styles.stopSpeechContainer}>
-                        <TouchableOpacity
-                            style={styles.stopSpeechButton}
-                            onPress={async () => {
-                                await stopSpeech();
-                                setIsSpeaking(false);
-                            }}
-                        >
-                            <Text style={styles.stopSpeechIcon}>⏹️</Text>
-                            <Text style={styles.stopSpeechText}>Stop Speaking</Text>
-                        </TouchableOpacity>
-                    </View>
+                    <TouchableOpacity style={styles.fab} onPress={async () => {
+                        await stopSpeech();
+                        setIsSpeaking(false);
+                    }}>
+                        <Ionicons name="stop-circle" size={32} color="#FFF" />
+                        <Text style={styles.fabText}>Stop</Text>
+                    </TouchableOpacity>
                 )}
+                {/* Paywall */}
+                <PaywallScreen visible={showPaywall} onClose={() => setShowPaywall(false)} />
 
-                {/* Auto-Speak Toggle - Moved to Settings */}
+                {/* Explanation Modal */}
+                <ExplanationModal
+                    visible={explanationVisible}
+                    onClose={() => setExplanationVisible(false)}
+                    translation={lastAnalysisResult?.translation || ''}
+                    breed={lastAnalysisResult?.breed}
+                    petId={lastAnalysisResult?.petId}
+                    journalEntryId={lastAnalysisResult?.journalId}
+                />
             </SafeAreaView>
         </View>
     );
@@ -249,7 +325,12 @@ export default function ScannerScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: theme.colors.background,
+        backgroundColor: '#000',
+    },
+    centerContent: {
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
     },
     camera: {
         flex: 1,
@@ -257,50 +338,64 @@ const styles = StyleSheet.create({
     overlay: {
         ...StyleSheet.absoluteFillObject,
         justifyContent: 'space-between',
-        zIndex: 1,
     },
-    headerGlass: {
-        margin: theme.spacing.m,
-        padding: theme.spacing.m,
+    header: {
+        marginTop: 10,
+        marginHorizontal: 20,
+        paddingVertical: 12,
         borderRadius: theme.borderRadius.l,
         overflow: 'hidden',
-        flexDirection: 'row', // Changed to row for history button
-        justifyContent: 'center', // Center title
-        alignItems: 'center',
-        backgroundColor: theme.colors.glass,
+        justifyContent: 'space-between',
+        flexDirection: 'row',
         borderWidth: 1,
         borderColor: theme.colors.glassBorder,
-        position: 'relative', // For absolute positioning if needed
     },
     headerTitle: {
-        ...(theme.typography.header as any),
-        fontSize: 20,
+        ...theme.typography.h3,
+        color: theme.colors.text,
     },
-    historyButton: {
-        position: 'absolute',
-        right: 15,
-        padding: 5,
-    },
-    historyIcon: {
-        fontSize: 22,
-    },
-    toneContainer: {
+    petBadge: {
+        flexDirection: 'row',
         alignItems: 'center',
-        marginTop: theme.spacing.s,
+        backgroundColor: 'rgba(255,255,255,0.2)',
+        paddingVertical: 4,
+        paddingHorizontal: 12,
+        borderRadius: 20,
+        marginLeft: 10,
+    },
+    petHeaderImage: {
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        marginRight: 6,
+    },
+    petName: {
+        color: '#FFF',
+        fontSize: 14,
+        fontWeight: 'bold',
+    },
+    permissionText: {
+        ...theme.typography.h3,
+        textAlign: 'center',
+        marginBottom: 20,
+        color: theme.colors.text,
+    },
+    toneWrapper: {
+        alignItems: 'center',
+        marginTop: 20,
     },
     toneSelector: {
         flexDirection: 'row',
-        borderRadius: theme.borderRadius.xl,
-        padding: theme.spacing.xs,
+        borderRadius: 30,
+        padding: 4,
         overflow: 'hidden',
-        backgroundColor: theme.colors.glass,
         borderWidth: 1,
         borderColor: theme.colors.glassBorder,
     },
     toneOption: {
         paddingVertical: 8,
-        paddingHorizontal: 16,
-        borderRadius: 20,
+        paddingHorizontal: 20,
+        borderRadius: 25,
     },
     toneOptionSelected: {
         backgroundColor: theme.colors.primary,
@@ -308,130 +403,86 @@ const styles = StyleSheet.create({
     toneText: {
         color: theme.colors.textSecondary,
         fontWeight: '600',
+        fontSize: 14,
     },
     toneTextSelected: {
-        color: '#fff',
+        color: '#FFF',
     },
-    bottomControls: {
+    bottomContainer: {
+        paddingBottom: 20,
+        paddingHorizontal: 20,
+    },
+    controls: {
         flexDirection: 'row',
-        justifyContent: 'space-around',
+        justifyContent: 'space-between', // Changed to space-between for better alignment
         alignItems: 'center',
-        paddingBottom: theme.spacing.xl,
-        paddingTop: theme.spacing.l,
-        borderTopLeftRadius: 30,
-        borderTopRightRadius: 30,
+        paddingVertical: 20,
+        paddingHorizontal: 40,
+        borderRadius: 40,
         overflow: 'hidden',
-        backgroundColor: 'rgba(10, 25, 47, 0.6)', // Semi-transparent Navy
+        borderWidth: 1,
+        borderColor: theme.colors.glassBorder,
     },
-    galleryButton: {
+    iconButton: {
         width: 50,
         height: 50,
         borderRadius: 25,
-        backgroundColor: 'rgba(255,255,255,0.2)',
+        backgroundColor: 'rgba(255,255,255,0.1)',
         justifyContent: 'center',
         alignItems: 'center',
     },
-    captureButtonOuter: {
+    captureButton: {
         width: 80,
         height: 80,
         borderRadius: 40,
-        borderWidth: 4,
-        borderColor: 'rgba(255,255,255,0.3)',
         justifyContent: 'center',
         alignItems: 'center',
+        shadowColor: theme.colors.primary,
+        shadowOpacity: 0.5,
+        shadowRadius: 10,
+        elevation: 10,
     },
-    captureButtonInner: {
-        width: 64,
-        height: 64,
-        borderRadius: 32,
+    captureInner: {
+        width: 70,
+        height: 70,
+        borderRadius: 35,
+        borderWidth: 4,
+        borderColor: '#FFF',
+        backgroundColor: 'transparent',
     },
     spacer: {
         width: 50,
     },
-    button: {
-        marginTop: 20,
-        backgroundColor: theme.colors.primary,
-        padding: 15,
-        borderRadius: 10,
-    },
-    buttonText: {
-        color: 'white',
-        fontWeight: 'bold',
-    },
-    iconText: {
-        fontSize: 24,
-    },
-    analyzingOverlay: {
+    loadingOverlay: {
         ...StyleSheet.absoluteFillObject,
         justifyContent: 'center',
         alignItems: 'center',
-        zIndex: 10,
-    },
-    analyzingText: {
-        marginTop: 20,
-        color: 'white',
-        fontSize: 20,
-        fontWeight: 'bold',
-    },
-    debugButton: {
-        width: 50,
-        height: 50,
-        borderRadius: 25,
-        backgroundColor: theme.colors.primary,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    debugButtonText: {
-        color: 'white',
-        fontSize: 10,
-        fontWeight: 'bold',
-    },
-    stopSpeechContainer: {
-        position: 'absolute',
-        bottom: 120,
-        alignSelf: 'center',
         zIndex: 20,
     },
-    stopSpeechButton: {
+    lottie: {
+        width: 250,
+        height: 250,
+    },
+    loadingText: {
+        ...theme.typography.h3,
+        marginTop: 20,
+    },
+    fab: {
+        position: 'absolute',
+        bottom: 140,
+        alignSelf: 'center',
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#ff4444',
-        paddingHorizontal: 30,
-        paddingVertical: 15,
+        backgroundColor: theme.colors.error,
+        paddingVertical: 12,
+        paddingHorizontal: 24,
         borderRadius: 30,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
-        elevation: 8,
+        zIndex: 30,
+        ...theme.shadows.medium,
     },
-    stopSpeechIcon: {
-        fontSize: 20,
-        marginRight: 10,
-    },
-    stopSpeechText: {
-        color: 'white',
-        fontSize: 16,
+    fabText: {
+        color: '#FFF',
         fontWeight: 'bold',
-    },
-    autoSpeakToggle: {
-        position: 'absolute',
-        top: theme.spacing.m + 70,
-        right: theme.spacing.m,
-        width: 50,
-        height: 50,
-        borderRadius: 25,
-        backgroundColor: 'rgba(255, 255, 255, 0.2)',
-        borderWidth: 2,
-        borderColor: 'rgba(255, 255, 255, 0.3)',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    autoSpeakToggleActive: {
-        backgroundColor: theme.colors.primary,
-        borderColor: theme.colors.primary,
-    },
-    autoSpeakIcon: {
-        fontSize: 24,
+        marginLeft: 8,
     }
 });

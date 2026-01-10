@@ -10,6 +10,7 @@ export interface InterpretationResult {
     status: 'ok' | 'error';
     explanation: string; // The dog's interpretation text
     confidence: number; // 0.0 to 1.0
+    breed?: string; // NEW: Breed detection result
     source?: string; // e.g., "vertex_gemini"
     share_id?: string; // Only if save=true
     error?: string; // Only if status='error'
@@ -52,6 +53,7 @@ export const analyzeImage = async (uri: string, tone: string = 'playful'): Promi
 
         formData.append('image', fileObject as any);
         formData.append('tone', tone);
+        formData.append('save', 'true'); // NEW: Request backend to save for sharing
 
         // 3. Upload
         Logger.info('🔵 Step 3: Sending to API via Axios (Attempt 1)...');
@@ -147,12 +149,24 @@ export const analyzeImageWithFetch = async (uri: string, tone: string = 'playful
         console.log('🟢 Step 4: Sending with fetch...');
         const API_URL = 'https://dog-translator-service-736369571076.us-east1.run.app';
 
+        // Add App Check token to fetch
+        const headers: Record<string, string> = {
+            'Authorization': token ? `Bearer ${token}` : '',
+        };
+
+        try {
+            const { getAppCheckToken } = await import('../services/appCheck');
+            const appCheckToken = await getAppCheckToken();
+            if (appCheckToken) {
+                headers['X-Firebase-AppCheck'] = appCheckToken;
+            }
+        } catch (e) {
+            console.warn('⚠️ Could not fetch App Check token for fetch:', e);
+        }
+
         const response = await fetch(`${API_URL}/api/v1/interpret`, {
             method: 'POST',
-            headers: {
-                'Authorization': token ? `Bearer ${token}` : '',
-                // DO NOT set Content-Type for FormData - let browser set it with boundary
-            },
+            headers,
             body: formData,
         });
 
@@ -171,6 +185,39 @@ export const analyzeImageWithFetch = async (uri: string, tone: string = 'playful
     } catch (error: any) {
         console.error('❌ FETCH Analysis failed:', error);
         Alert.alert('Fetch Analysis Error', error.message || 'Unknown error');
+        return null;
+    }
+};
+
+export interface ExplanationResponse {
+    explanation: string;
+    links: { title: string; url: string }[];
+}
+
+/**
+ * Fetch detailed explanation for a translation
+ */
+export const getExplanation = async (translation: string, breed?: string): Promise<ExplanationResponse | null> => {
+    try {
+        Logger.info('🔵 Requesting explanation...');
+        const token = await auth.currentUser?.getIdToken();
+
+        // Using Axios client if configured, or fallback to fetch if needed. 
+        // analysisService uses `client` which has auth interceptor? 
+        // The existing analyzeImage uses `client` but `analyzeImageWithFetch` manually gets token.
+        // `client.ts` likely handles auth. Let's use `client`.
+
+        const response = await client.post('/api/v1/explain', {
+            translation,
+            breed
+        }, {
+            headers: { 'Content-Type': 'application/json' }
+        });
+
+        Logger.info('✅ Explanation received:', response.data);
+        return response.data;
+    } catch (error: any) {
+        Logger.error('❌ Explanation request failed:', error);
         return null;
     }
 };

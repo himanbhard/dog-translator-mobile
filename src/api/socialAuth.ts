@@ -1,4 +1,4 @@
-import * as AppleAuthentication from 'expo-apple-authentication';
+// import { appleAuth } from '@invertase/react-native-apple-authentication';
 import { GoogleAuthProvider, OAuthProvider, signInWithCredential } from 'firebase/auth';
 import { Platform } from 'react-native';
 import { auth } from '../config/firebase';
@@ -24,6 +24,7 @@ export const signInWithGoogleToken = async (idToken: string) => {
  * @param nonce The nonce used for the request
  */
 export const signInWithAppleToken = async (idToken: string, nonce: string) => {
+    /*
     try {
         const provider = new OAuthProvider('apple.com');
         const credential = provider.credential({
@@ -36,11 +37,11 @@ export const signInWithAppleToken = async (idToken: string, nonce: string) => {
         console.error('Firebase Apple Sign-In Error:', error);
         throw new Error(error.message || 'Apple Authentication failed');
     }
+    */
+    throw new Error('Apple Sign-In is temporarily disabled for development.');
 };
 
 export const isAppleAuthAvailable = async (): Promise<boolean> => {
-    if (Platform.OS !== 'ios') {
-        return false;
-    }
-    return await AppleAuthentication.isAvailableAsync();
+    // return appleAuth.isSupported;
+    return false;
 };

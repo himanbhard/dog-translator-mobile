@@ -1,0 +1,7 @@
+** BUILD FAILED **
+
+
+The following build commands failed:
+	CompileC /Users/himanshubhardwaj/Library/Developer/Xcode/DerivedData/dogtranslatorandroid-ggzogsycxsdmzjghqrtedvifmbpg/Build/Intermediates.noindex/Pods.build/Debug-iphonesimulator/react-native-sqlite-storage.build/Objects-normal/arm64/SQLite.o /Users/himanshubhardwaj/Documents/dog-translator-mobile/dog-translator-mobile/node_modules/react-native-sqlite-storage/platforms/ios/SQLite.m normal arm64 objective-c com.apple.compilers.llvm.clang.1_0.compiler (in target 'react-native-sqlite-storage' from project 'Pods')
+	Building workspace dogtranslatorandroid with scheme dogtranslatorandroid and configuration Debug
+(2 failures)
