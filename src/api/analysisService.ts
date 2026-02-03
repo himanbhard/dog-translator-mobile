@@ -221,3 +221,18 @@ export const getExplanation = async (translation: string, breed?: string): Promi
         return null;
     }
 };
+
+/**
+ * Fetch user's history from the backend
+ */
+export const getRemoteHistory = async (): Promise<InterpretationResult[]> => {
+    try {
+        Logger.info('🔵 Fetching remote history...');
+        const response = await client.get('/api/v1/history');
+        Logger.info('✅ Remote history received:', response.data.length, 'items');
+        return response.data;
+    } catch (error: any) {
+        Logger.error('❌ Remote history fetch failed:', error);
+        return [];
+    }
+};

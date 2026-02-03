@@ -1,202 +1,183 @@
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { BlurView } from '@react-native-community/blur';
-import LinearGradient from 'react-native-linear-gradient';
 import React from 'react';
-import { Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View, ScrollView } from 'react-native';
 import { Button } from '../components/ui/Button';
 import { useSettingsStore } from '../store/settingsStore';
 import { theme } from '../styles/theme';
+import { ScreenWrapper } from '../components/ui/ScreenWrapper';
 
 interface PaywallScreenProps {
-    visible: boolean;
     onClose: () => void;
 }
 
-export default function PaywallScreen({ visible, onClose }: PaywallScreenProps) {
+export default function PaywallScreen({ onClose }: PaywallScreenProps) {
     const { setPremiumStatus } = useSettingsStore();
 
     const handleMockPurchase = () => {
-        // MOCK PURCHASE FOR DEV
         setPremiumStatus(true);
         onClose();
     };
 
     return (
-        <Modal visible={visible} animationType="slide" transparent>
-            <View style={styles.container}>
-                <BlurView blurType="dark" blurAmount={90} style={StyleSheet.absoluteFill} />
+        <ScreenWrapper statusBarStyle="dark-content" backgroundColor="#FFF">
+            <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+                <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+                    <Ionicons name="close-circle" size={32} color={theme.colors.separator} />
+                </TouchableOpacity>
 
-                <LinearGradient
-                    colors={['rgba(80, 40, 200, 0.3)', 'transparent']}
-                    style={StyleSheet.absoluteFill}
-                />
-
-                <View style={styles.content}>
+                <View style={styles.header}>
                     <View style={styles.iconContainer}>
-                        <Ionicons name="diamond" size={60} color={theme.colors.primary} />
+                        <Ionicons name="star" size={50} color={theme.colors.primary} />
                     </View>
-
-                    <Text style={styles.title}>Unlock Unlimited Access</Text>
-                    <Text style={styles.subtitle}>
-                        You've reached your daily limit of free scans. Upgrade to continue interpreting your dog's feelings!
-                    </Text>
-
-                    <View style={styles.featuresList}>
-                        <FeatureItem icon="infinite" text="Unlimited Translations" />
-                        <FeatureItem icon="paw" text="Detailed Breed Detection" />
-                        <FeatureItem icon="share-social" text="Premium Sharing Cards" />
-                        <FeatureItem icon="ban" text="No Ads (Coming Soon)" />
-                    </View>
-
-                    <View style={styles.pricingContainer}>
-                        <TouchableOpacity style={styles.planCard} onPress={handleMockPurchase}>
-                            <View style={styles.planHeader}>
-                                <Text style={styles.planName}>Lifetime</Text>
-                                <View style={styles.badge}><Text style={styles.badgeText}>BEST VALUE</Text></View>
-                            </View>
-                            <Text style={styles.price}>$29.99</Text>
-                            <Text style={styles.period}>one-time payment</Text>
-                        </TouchableOpacity>
-                    </View>
-
-                    <Text style={styles.disclaimer}>
-                        This is a simulation. Tapping the card will simulate a successful purchase.
-                    </Text>
-
-                    <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-                        <Text style={styles.closeText}>Maybe Later</Text>
-                    </TouchableOpacity>
+                    <Text style={styles.title}>Go Premium</Text>
+                    <Text style={styles.subtitle}>Unlock the full potential of your bond with your pet.</Text>
                 </View>
-            </View>
-        </Modal>
+
+                <View style={styles.features}>
+                    <FeatureItem icon="infinite" title="Unlimited Scans" description="Translate as much as you want without daily limits." />
+                    <FeatureItem icon="search" title="Breed Analysis" description="Get specialized insights based on your dog's breed." />
+                    <FeatureItem icon="share" title="Premium Sharing" description="Beautiful cards to share your translations with friends." />
+                </View>
+
+                <View style={styles.cta}>
+                    <TouchableOpacity style={styles.planCard} onPress={handleMockPurchase} activeOpacity={0.9}>
+                        <View style={styles.planInfo}>
+                            <Text style={styles.planTitle}>LIFETIME ACCESS</Text>
+                            <Text style={styles.planPrice}>$29.99</Text>
+                        </View>
+                        <View style={styles.bestValueBadge}>
+                            <Text style={styles.bestValueText}>BEST VALUE</Text>
+                        </View>
+                    </TouchableOpacity>
+
+                    <Button title="Subscribe Now" onPress={handleMockPurchase} style={styles.buyButton} />
+                    
+                    <Text style={styles.disclaimer}>
+                        Payments will be charged to your App Store account. You can manage your subscription in settings.
+                    </Text>
+                </View>
+            </ScrollView>
+        </ScreenWrapper>
     );
 }
 
-function FeatureItem({ icon, text }: { icon: any; text: string }) {
+function FeatureItem({ icon, title, description }: { icon: any; title: string; description: string }) {
     return (
         <View style={styles.featureItem}>
             <View style={styles.featureIcon}>
-                <Ionicons name={icon} size={20} color="#FFF" />
+                <Ionicons name={icon} size={24} color={theme.colors.primary} />
             </View>
-            <Text style={styles.featureText}>{text}</Text>
+            <View style={styles.featureText}>
+                <Text style={styles.featureTitle}>{title}</Text>
+                <Text style={styles.featureDescription}>{description}</Text>
+            </View>
         </View>
     );
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
     content: {
-        width: '90%',
-        backgroundColor: 'rgba(30, 30, 40, 0.8)',
-        borderRadius: 30,
-        padding: 30,
+        padding: theme.spacing.l,
+        paddingTop: 40,
+    },
+    closeButton: {
+        alignSelf: 'flex-end',
+        marginBottom: 20,
+    },
+    header: {
         alignItems: 'center',
-        borderWidth: 1,
-        borderColor: theme.colors.glassBorder,
+        marginBottom: 40,
     },
     iconContainer: {
         width: 100,
         height: 100,
         borderRadius: 50,
-        backgroundColor: 'rgba(120, 80, 255, 0.1)',
+        backgroundColor: theme.colors.primary + '10',
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 20,
+        marginBottom: theme.spacing.m,
     },
     title: {
-        fontSize: 28,
-        fontWeight: 'bold',
-        color: '#FFF',
+        ...theme.typography.h1,
         textAlign: 'center',
-        marginBottom: 10,
     },
     subtitle: {
-        fontSize: 16,
-        color: theme.colors.textSecondary,
+        ...theme.typography.subheadline,
         textAlign: 'center',
-        marginBottom: 30,
-        lineHeight: 22,
+        marginTop: 8,
+        paddingHorizontal: 20,
     },
-    featuresList: {
-        width: '100%',
-        marginBottom: 30,
+    features: {
+        marginBottom: 40,
     },
     featureItem: {
         flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 15,
-        backgroundColor: 'rgba(255,255,255,0.05)',
-        padding: 12,
-        borderRadius: 16,
+        marginBottom: 24,
     },
     featureIcon: {
-        marginRight: 15,
+        width: 44,
+        height: 44,
+        borderRadius: 12,
+        backgroundColor: theme.colors.background,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: theme.spacing.m,
     },
     featureText: {
-        color: '#FFF',
-        fontSize: 16,
-        fontWeight: '500',
+        flex: 1,
     },
-    pricingContainer: {
+    featureTitle: {
+        ...theme.typography.headline,
+        marginBottom: 2,
+    },
+    featureDescription: {
+        ...theme.typography.subheadline,
+        color: theme.colors.textSecondary,
+    },
+    cta: {
         width: '100%',
-        marginBottom: 20,
     },
     planCard: {
-        backgroundColor: theme.colors.primary,
-        padding: 20,
-        borderRadius: 20,
-        borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.2)',
-    },
-    planHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 10,
+        padding: theme.spacing.l,
+        borderRadius: 20,
+        backgroundColor: theme.colors.primary,
+        marginBottom: theme.spacing.m,
+        ...theme.shadows.card,
     },
-    planName: {
-        color: '#FFF',
-        fontSize: 18,
+    planInfo: {
+        flex: 1,
+    },
+    planTitle: {
+        ...theme.typography.caption,
+        color: 'rgba(255,255,255,0.7)',
         fontWeight: 'bold',
+        letterSpacing: 1,
     },
-    badge: {
+    planPrice: {
+        ...theme.typography.h2,
+        color: '#FFF',
+    },
+    bestValueBadge: {
         backgroundColor: '#FFD700',
-        paddingHorizontal: 8,
+        paddingHorizontal: 10,
         paddingVertical: 4,
         borderRadius: 8,
     },
-    badgeText: {
-        color: '#000',
-        fontWeight: 'bold',
+    bestValueText: {
         fontSize: 10,
-    },
-    price: {
-        color: '#FFF',
-        fontSize: 32,
         fontWeight: 'bold',
-        marginBottom: 5,
+        color: '#000',
     },
-    period: {
-        color: 'rgba(255,255,255,0.8)',
-        fontSize: 14,
+    buyButton: {
+        marginBottom: theme.spacing.m,
     },
     disclaimer: {
-        color: theme.colors.textSecondary,
-        fontSize: 12,
+        ...theme.typography.caption,
         textAlign: 'center',
-        marginBottom: 20,
-        lineHeight: 16,
-    },
-    closeButton: {
-        padding: 10,
-    },
-    closeText: {
         color: theme.colors.textSecondary,
-        fontSize: 16,
-        textDecorationLine: 'underline',
-    },
+        paddingHorizontal: 20,
+    }
 });

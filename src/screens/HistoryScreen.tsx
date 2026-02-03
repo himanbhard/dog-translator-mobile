@@ -1,141 +1,76 @@
-import { useFocusEffect, useNavigation } from '@react-navigation/native';
-import React, { useCallback, useState } from 'react';
-import { Alert, FlatList, RefreshControl, StyleSheet, Text, TouchableOpacity, View, Image } from 'react-native';
-import { deleteImageFromStorage, getImageUri } from '../services/fileStorage';
-import { HistoryItem, deleteHistoryItem, getHistoryItems } from '../services/historyDatabase';
+import React, { useEffect, useState } from 'react';
+import { View, Text, FlatList, StyleSheet, Image, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { getAllHistory } from '../services/historyDatabase';
 import { theme } from '../styles/theme';
 import { ScreenWrapper } from '../components/ui/ScreenWrapper';
 import { Card } from '../components/ui/Card';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { usePetStore } from '../store/usePetStore';
 
 export default function HistoryScreen() {
-    const [history, setHistory] = useState<HistoryItem[]>([]);
-    const [refreshing, setRefreshing] = useState(false);
-    const navigation = useNavigation();
-    const { activePetId } = usePetStore(); // Get active pet
+    const [history, setHistory] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+    const navigation = useNavigation<any>();
 
-    const loadData = async () => {
-        setRefreshing(true);
-        try {
-            const items = await getHistoryItems(activePetId);
-            setHistory(items);
-        } catch (e) {
-            console.error("Failed to load history", e);
-        } finally {
-            setRefreshing(false);
-        }
+    useEffect(() => {
+        loadHistory();
+    }, []);
+
+    const loadHistory = async () => {
+        setLoading(true);
+        const items = await getAllHistory();
+        setHistory(items);
+        setLoading(false);
     };
 
-    useFocusEffect(
-        useCallback(() => {
-            loadData();
-        }, [activePetId])
+    const renderItem = ({ item }: { item: any }) => (
+        <TouchableOpacity 
+            onPress={() => navigation.navigate('HistoryDetail', { item })}
+            activeOpacity={0.7}
+        >
+            <Card style={styles.card}>
+                <Image source={{ uri: 'file://' + item.local_file_path }} style={styles.image} />
+                <View style={styles.info}>
+                    <Text style={styles.date}>{new Date(item.timestamp).toLocaleDateString()}</Text>
+                    <Text style={styles.explanation} numberOfLines={2}>
+                        {item.metadata.explanation}
+                    </Text>
+                    <View style={styles.footer}>
+                        <View style={[styles.badge, { backgroundColor: theme.colors.surfaceSecondary }]}>
+                            <Text style={styles.badgeText}>{item.metadata.tone}</Text>
+                        </View>
+                        <Text style={styles.confidence}>
+                            {(item.metadata.confidence * 100).toFixed(0)}% Match
+                        </Text>
+                    </View>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color={theme.colors.separator} />
+            </Card>
+        </TouchableOpacity>
     );
 
-    const handleDelete = (id: number, filename: string) => {
-        Alert.alert(
-            "Delete Entry",
-            "Are you sure you want to delete this memory?",
-            [
-                { text: "Cancel", style: "cancel" },
-                {
-                    text: "Delete",
-                    style: "destructive",
-                    onPress: async () => {
-                        await deleteHistoryItem(id);
-                        await deleteImageFromStorage(filename);
-                        loadData(); // Reload list
-                    }
-                }
-            ]
-        );
-    };
-
-    const handlePressItem = (item: HistoryItem) => {
-        (navigation as any).navigate('HistoryDetail', {
-            id: item.id,
-            filename: item.filename,
-            explanation: item.explanation,
-            confidence: item.confidence,
-            tone: item.tone,
-            breed: item.breed || 'Unknown Mix',
-            timestamp: item.timestamp,
-            share_id: item.share_id,
-            detailed_explanation: item.detailed_explanation,
-            educational_links: item.educational_links
-        });
-    };
-
-    const renderItem = ({ item }: { item: HistoryItem }) => {
-        const date = new Date(item.timestamp).toLocaleDateString();
-        const time = new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        const imageSource = { uri: getImageUri(item.filename) };
-
-        return (
-            <TouchableOpacity
-                activeOpacity={0.9}
-                onPress={() => handlePressItem(item)}
-                style={styles.cardWrapper}
-            >
-                <Card variant="default" style={styles.card}>
-                    <View style={styles.imageContainer}>
-                        <Image
-                            source={imageSource}
-                            style={styles.image}
-                            resizeMode="cover"
-                        />
-                        <View style={styles.toneBadge}>
-                            <Text style={styles.toneText}>{item.tone || 'Neutral'}</Text>
-                        </View>
-                    </View>
-
-                    <View style={styles.contentContainer}>
-                        <View style={styles.headerRow}>
-                            <View>
-                                <Text style={styles.dateText}>{date} • {time}</Text>
-                                {item.breed && <Text style={styles.breedText}>{item.breed}</Text>}
-                            </View>
-                            <TouchableOpacity onPress={() => handleDelete(item.id, item.filename)} hitSlop={10}>
-                                <Ionicons name="trash-outline" size={20} color={theme.colors.error} />
-                            </TouchableOpacity>
-                        </View>
-
-                        <Text style={styles.explanationText} numberOfLines={2}>
-                            {item.explanation}
-                        </Text>
-
-                        {item.confidence > 0 && (
-                            <View style={styles.confidenceRow}>
-                                <Ionicons name="checkmark-circle-outline" size={14} color={theme.colors.success} />
-                                <Text style={styles.confidenceText}>
-                                    {(item.confidence * 100).toFixed(0)}% Confidence
-                                </Text>
-                            </View>
-                        )}
-                    </View>
-                </Card>
-            </TouchableOpacity>
-        );
-    };
+    const renderEmpty = () => (
+        <View style={styles.emptyContainer}>
+            <Ionicons name="paw-outline" size={80} color={theme.colors.separator} />
+            <Text style={styles.emptyTitle}>No History Yet</Text>
+            <Text style={styles.emptySubtitle}>Start scanning your dog to see translations here!</Text>
+        </View>
+    );
 
     return (
-        <ScreenWrapper>
-            {history.length === 0 && !refreshing ? (
-                <View style={styles.emptyContainer}>
-                    <Ionicons name="book-outline" size={60} color={theme.colors.textSecondary} />
-                    <Text style={styles.emptyText}>No memories yet.</Text>
-                    <Text style={styles.emptySubText}>Translate some dog behaviors to start your journal!</Text>
+        <ScreenWrapper backgroundColor={theme.colors.background}>
+            {loading ? (
+                <View style={styles.center}>
+                    <ActivityIndicator color={theme.colors.primary} size="large" />
                 </View>
             ) : (
                 <FlatList
                     data={history}
                     keyExtractor={(item) => item.id.toString()}
                     renderItem={renderItem}
-                    contentContainerStyle={styles.listContent}
-                    refreshControl={
-                        <RefreshControl refreshing={refreshing} onRefresh={loadData} tintColor={theme.colors.primary} />
-                    }
+                    ListEmptyComponent={renderEmpty}
+                    contentContainerStyle={styles.list}
+                    showsVerticalScrollIndicator={false}
                 />
             )}
         </ScreenWrapper>
@@ -143,95 +78,74 @@ export default function HistoryScreen() {
 }
 
 const styles = StyleSheet.create({
-    listContent: {
+    list: {
         padding: theme.spacing.m,
-        paddingBottom: 100, // Space for tab bar
     },
-    cardWrapper: {
-        marginBottom: theme.spacing.m,
+    center: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     card: {
-        padding: 0, // Reset default padding for image layout
-        overflow: 'hidden',
-    },
-    imageContainer: {
-        height: 180,
-        width: '100%',
-        backgroundColor: '#000',
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: theme.spacing.m,
+        padding: theme.spacing.s,
     },
     image: {
-        width: '100%',
-        height: '100%',
-    },
-    toneBadge: {
-        position: 'absolute',
-        top: 10,
-        right: 10,
-        backgroundColor: 'rgba(0,0,0,0.6)',
-        paddingHorizontal: 10,
-        paddingVertical: 4,
+        width: 80,
+        height: 80,
         borderRadius: 12,
-        borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.2)',
+        backgroundColor: theme.colors.surfaceSecondary,
     },
-    toneText: {
-        color: '#fff',
-        fontWeight: 'bold',
+    info: {
+        flex: 1,
+        marginLeft: theme.spacing.m,
+    },
+    date: {
+        ...theme.typography.caption,
+        fontWeight: '600',
+        marginBottom: 2,
+    },
+    explanation: {
+        ...theme.typography.headline,
+        fontSize: 15,
+        marginBottom: 8,
+    },
+    footer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+    },
+    badge: {
+        paddingHorizontal: 8,
+        paddingVertical: 2,
+        borderRadius: 6,
+    },
+    badgeText: {
+        ...theme.typography.caption,
         fontSize: 10,
+        fontWeight: 'bold',
         textTransform: 'uppercase',
     },
-    contentContainer: {
-        padding: theme.spacing.m,
-    },
-    headerRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: theme.spacing.s,
-    },
-    dateText: {
-        color: '#fff',
-        fontWeight: 'bold',
-        fontSize: 14,
-    },
-    breedText: {
-        color: theme.colors.primary,
-        fontSize: 12,
-        marginTop: 2,
-    },
-    timeText: {
-        color: theme.colors.textSecondary,
-        fontSize: 12,
-    },
-    explanationText: {
-        ...theme.typography.body,
-        fontSize: 14,
-        marginBottom: theme.spacing.s,
-    },
-    confidenceRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    confidenceText: {
-        color: theme.colors.success,
-        fontSize: 12,
-        fontWeight: 'bold',
-        marginLeft: 4,
+    confidence: {
+        ...theme.typography.caption,
+        fontStyle: 'italic',
     },
     emptyContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        padding: 40,
+        marginTop: 100,
+        paddingHorizontal: 40,
     },
-    emptyText: {
-        ...theme.typography.h2,
+    emptyTitle: {
+        ...theme.typography.h3,
         marginTop: 20,
-        marginBottom: 10,
     },
-    emptySubText: {
-        ...theme.typography.body,
+    emptySubtitle: {
+        ...theme.typography.subheadline,
         textAlign: 'center',
-        color: theme.colors.textSecondary,
-    },
+        marginTop: 8,
+    }
 });

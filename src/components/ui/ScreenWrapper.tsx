@@ -1,7 +1,6 @@
 import React from 'react';
-import { StyleSheet, ViewStyle, StatusBar } from 'react-native';
-import LinearGradient from 'react-native-linear-gradient';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { StyleSheet, ViewStyle, StatusBar, View, ScrollView } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { theme } from '../../styles/theme';
 
 interface ScreenWrapperProps {
@@ -9,27 +8,56 @@ interface ScreenWrapperProps {
     style?: ViewStyle;
     withScrollView?: boolean;
     statusBarStyle?: 'light-content' | 'dark-content';
+    backgroundColor?: string;
 }
 
+/**
+ * Standard Screen Wrapper following iOS HIG.
+ * Handles Safe Areas, Status Bar, and optional Scrolling.
+ */
 export const ScreenWrapper: React.FC<ScreenWrapperProps> = ({
     children,
     style,
-    statusBarStyle = 'light-content'
+    withScrollView = false,
+    statusBarStyle = 'dark-content',
+    backgroundColor = theme.colors.background
 }) => {
     const insets = useSafeAreaInsets();
 
+    const contentStyle = [
+        styles.content,
+        { 
+            paddingTop: insets.top,
+            paddingBottom: insets.bottom,
+            paddingLeft: insets.left,
+            paddingRight: insets.right,
+            backgroundColor
+        },
+        style
+    ];
+
+    if (withScrollView) {
+        return (
+            <View style={[styles.container, { backgroundColor }]}>
+                <StatusBar barStyle={statusBarStyle} />
+                <ScrollView 
+                    style={styles.container} 
+                    contentContainerStyle={contentStyle}
+                    showsVerticalScrollIndicator={false}
+                >
+                    {children}
+                </ScrollView>
+            </View>
+        );
+    }
+
     return (
-        <LinearGradient
-            colors={[...theme.gradients.background]}
-            style={styles.container}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-        >
+        <View style={[styles.container, { backgroundColor }]}>
             <StatusBar barStyle={statusBarStyle} />
-            <SafeAreaView style={[styles.content, { paddingTop: insets.top }, style]}>
+            <View style={contentStyle}>
                 {children}
-            </SafeAreaView>
-        </LinearGradient>
+            </View>
+        </View>
     );
 };
 

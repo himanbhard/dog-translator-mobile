@@ -1,6 +1,5 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet, ActivityIndicator, ViewStyle, TextStyle } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import { TouchableOpacity, Text, StyleSheet, ActivityIndicator, ViewStyle, TextStyle, View } from 'react-native';
 import { theme } from '../../styles/theme';
 
 interface ButtonProps {
@@ -14,6 +13,9 @@ interface ButtonProps {
     icon?: React.ReactNode;
 }
 
+/**
+ * Modern iOS-style Button component following HIG.
+ */
 export const Button: React.FC<ButtonProps> = ({
     title,
     onPress,
@@ -25,86 +27,70 @@ export const Button: React.FC<ButtonProps> = ({
     icon
 }) => {
     const isPrimary = variant === 'primary';
+    const isSecondary = variant === 'secondary';
     const isOutline = variant === 'outline';
     const isGhost = variant === 'ghost';
 
-    // Base container styles
     const containerStyles = [
         styles.container,
-        disabled && styles.disabled,
+        isPrimary && styles.primary,
+        isSecondary && styles.secondary,
         isOutline && styles.outline,
         isGhost && styles.ghost,
+        disabled && styles.disabled,
         style
     ];
 
-    const renderContent = () => (
-        <>
-            {loading ? (
-                <ActivityIndicator color={isPrimary ? '#FFF' : theme.colors.primary} />
-            ) : (
-                <>
-                    {icon && icon}
-                    <Text style={[
-                        styles.text,
-                        isOutline && styles.textOutline,
-                        isGhost && styles.textGhost,
-                        textStyle
-                    ]}>
-                        {title}
-                    </Text>
-                </>
-            )}
-        </>
-    );
-
-    if (isPrimary && !disabled && !isOutline && !isGhost) {
-        return (
-            <TouchableOpacity onPress={onPress} activeOpacity={0.8} disabled={disabled} style={[styles.gradientContainer, style]}>
-                <LinearGradient
-                    colors={theme.gradients.primary}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
-                    style={styles.gradient}
-                >
-                    {renderContent()}
-                </LinearGradient>
-            </TouchableOpacity>
-        );
-    }
+    const textStyles = [
+        styles.text,
+        isPrimary && styles.textPrimary,
+        isSecondary && styles.textSecondary,
+        isOutline && styles.textOutline,
+        isGhost && styles.textGhost,
+        textStyle
+    ];
 
     return (
         <TouchableOpacity
             onPress={onPress}
             activeOpacity={0.7}
-            disabled={disabled}
+            disabled={disabled || loading}
             style={containerStyles}
         >
-            {renderContent()}
+            {loading ? (
+                <ActivityIndicator color={isPrimary ? '#FFFFFF' : theme.colors.primary} />
+            ) : (
+                <View style={styles.content}>
+                    {icon && <View style={styles.iconContainer}>{icon}</View>}
+                    <Text style={textStyles}>{title}</Text>
+                </View>
+            )}
         </TouchableOpacity>
     );
 };
 
 const styles = StyleSheet.create({
     container: {
-        height: 50,
+        height: 50, // Standard iOS tap target
+        minWidth: 44,
         borderRadius: theme.borderRadius.l,
         justifyContent: 'center',
         alignItems: 'center',
-        flexDirection: 'row',
         paddingHorizontal: theme.spacing.l,
-        backgroundColor: theme.colors.surfaceLight,
     },
-    gradientContainer: {
-        height: 50,
-        borderRadius: theme.borderRadius.l,
-        overflow: 'hidden',
-    },
-    gradient: {
-        flex: 1,
-        justifyContent: 'center',
+    content: {
+        flexDirection: 'row',
         alignItems: 'center',
-        flexDirection: 'row',
-        paddingHorizontal: theme.spacing.l,
+    },
+    iconContainer: {
+        marginRight: theme.spacing.s,
+    },
+    primary: {
+        backgroundColor: theme.colors.primary,
+        ...theme.shadows.button,
+    },
+    secondary: {
+        backgroundColor: theme.colors.surfaceSecondary,
     },
     outline: {
         backgroundColor: 'transparent',
@@ -119,13 +105,17 @@ const styles = StyleSheet.create({
     },
     text: {
         ...theme.typography.button,
+    },
+    textPrimary: {
         color: '#FFFFFF',
-        marginLeft: theme.spacing.xs,
+    },
+    textSecondary: {
+        color: theme.colors.primary,
     },
     textOutline: {
         color: theme.colors.primary,
     },
     textGhost: {
-        color: theme.colors.textSecondary,
+        color: theme.colors.primary,
     }
 });
