@@ -25,6 +25,8 @@ export default function ScannerScreen() {
     const [isanalyzing, setIsAnalyzing] = useState(false);
     const [isSpeaking, setIsSpeaking] = useState(false);
     const { autoSpeak, isPremium, dailyScans, incrementScanCount, checkResetDailyScans } = useSettingsStore();
+    const { activePetId, getActivePet } = usePetStore();
+    const activePet = getActivePet();
 
     useEffect(() => {
         checkResetDailyScans();
@@ -103,7 +105,7 @@ export default function ScannerScreen() {
                                 confidence: result.confidence,
                                 tone: tone,
                                 breed: result.breed || 'Unknown',
-                            });
+                            }, activePetId);
                         }
                     },
                     { text: 'Done', style: 'cancel' }

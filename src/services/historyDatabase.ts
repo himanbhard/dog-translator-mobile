@@ -20,12 +20,19 @@ export const initHistoryDB = async () => {
         await db.executeSql(`
             CREATE TABLE IF NOT EXISTS history (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
+                pet_id TEXT NULL,
                 local_file_path TEXT NOT NULL,
                 timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
                 metadata TEXT
             );
         `);
-        console.log("✅ History database initialized with schema: id, local_file_path, timestamp, metadata.");
+        
+        // Add pet_id column if it doesn't exist (Migration)
+        try {
+            await db.executeSql('ALTER TABLE history ADD COLUMN pet_id TEXT;');
+        } catch (e) { /* already exists */ }
+
+        console.log("✅ History database initialized with schema: id, pet_id, local_file_path, timestamp, metadata.");
     } catch (error) {
         console.error("❌ Failed to initialize history database:", error);
     }
@@ -35,15 +42,16 @@ export const initHistoryDB = async () => {
  * Adds a new entry to the history table.
  * @param filePath The local path to the saved image.
  * @param metadata Object containing AI analysis results, tone, etc. (stored as JSON)
+ * @param petId Optional ID of the pet associated with this entry.
  */
-export const addHistoryEntry = async (filePath: string, metadata: object): Promise<number> => {
+export const addHistoryEntry = async (filePath: string, metadata: object, petId: string | null = null): Promise<number> => {
     try {
         const db = await getDB();
         const metadataString = JSON.stringify(metadata);
         
         const [result] = await db.executeSql(
-            'INSERT INTO history (local_file_path, metadata) VALUES (?, ?)',
-            [filePath, metadataString]
+            'INSERT INTO history (local_file_path, metadata, pet_id) VALUES (?, ?, ?)',
+            [filePath, metadataString, petId]
         );
         
         return result.insertId;
@@ -54,12 +62,20 @@ export const addHistoryEntry = async (filePath: string, metadata: object): Promi
 };
 
 /**
- * Retrieves all history items, sorted by newest first.
+ * Retrieves history items, optionally filtered by petId.
  */
-export const getAllHistory = async () => {
+export const getAllHistory = async (petId: string | null = null) => {
     try {
         const db = await getDB();
-        const [results] = await db.executeSql('SELECT * FROM history ORDER BY timestamp DESC');
+        let query = 'SELECT * FROM history ORDER BY timestamp DESC';
+        let params: any[] = [];
+
+        if (petId) {
+            query = 'SELECT * FROM history WHERE pet_id = ? ORDER BY timestamp DESC';
+            params = [petId];
+        }
+
+        const [results] = await db.executeSql(query, params);
         
         const items = [];
         for (let i = 0; i < results.rows.length; i++) {
