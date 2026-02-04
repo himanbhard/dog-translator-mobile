@@ -4,14 +4,13 @@ import { initializeApp } from 'firebase/app';
 import { getReactNativePersistence, initializeAuth, getAuth, Auth } from 'firebase/auth';
 
 const firebaseConfig = {
-    apiKey: "AIzaSyCrlMwL_RLF3YU05UoW2ytG2SXGnv35Ba8",
-    // Keep 'translaotr' typo as per original file
-    authDomain: "dog-translaotr-nonprod.firebaseapp.com",
-    projectId: "dog-translaotr-nonprod",
-    storageBucket: "dog-translaotr-nonprod.firebasestorage.app",
-    messagingSenderId: "736369571076",
-    appId: "1:736369571076:web:78c6d70b511469132bcc51",
-    measurementId: "G-XH339BBWEY"
+    apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY || process.env.FIREBASE_API_KEY,
+    authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN || process.env.FIREBASE_AUTH_DOMAIN,
+    projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID || process.env.FIREBASE_PROJECT_ID,
+    storageBucket: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET || process.env.FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || process.env.FIREBASE_MESSAGING_SENDER_ID,
+    appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID || process.env.FIREBASE_APP_ID,
+    measurementId: process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID || process.env.FIREBASE_MEASUREMENT_ID
 };
 
 const app = initializeApp(firebaseConfig);

@@ -1,6 +1,6 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Platform } from 'react-native';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import { theme } from '../styles/theme';
 
 interface Props {
@@ -12,6 +12,10 @@ interface State {
     error: Error | null;
 }
 
+/**
+ * Global Error Boundary to prevent white-screen crashes.
+ * Follows HIG for error presentation.
+ */
 export class ErrorBoundary extends Component<Props, State> {
     constructor(props: Props) {
         super(props);
@@ -23,31 +27,41 @@ export class ErrorBoundary extends Component<Props, State> {
     }
 
     componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-        console.error("Uncaught error:", error, errorInfo);
-        // Here you would log to Sentry
+        console.error("🛡️ [ErrorBoundary] Uncaught error:", error, errorInfo);
     }
 
-    handleRestart = () => {
-        // In Expo, checking updates or just clearing state is common.
-        // For now, we attempt to reset local state.
+    handleRetry = () => {
         this.setState({ hasError: false, error: null });
     };
 
     render() {
         if (this.state.hasError) {
             return (
-                <View style={styles.container}>
-                    <Ionicons name="alert-circle" size={80} color={theme.colors.error} />
-                    <Text style={styles.title}>Oops, something went wrong!</Text>
-                    <Text style={styles.subtitle}>
-                        We're asking the dogs what happened. Please try restarting the app.
-                    </Text>
-                    <Text style={styles.errorText}>{this.state.error?.toString()}</Text>
+                <SafeAreaView style={styles.safe}>
+                    <View style={styles.container}>
+                        <View style={styles.iconContainer}>
+                            <Ionicons name="alert-circle" size={60} color={theme.colors.error} />
+                        </View>
+                        <Text style={styles.title}>Something went wrong</Text>
+                        <Text style={styles.subtitle}>
+                            An unexpected error occurred. Our team has been notified.
+                        </Text>
+                        
+                        <View style={styles.errorBox}>
+                            <Text style={styles.errorText} numberOfLines={3}>
+                                {this.state.error?.message || 'Unknown Error'}
+                            </Text>
+                        </View>
 
-                    <TouchableOpacity style={styles.button} onPress={this.handleRestart}>
-                        <Text style={styles.buttonText}>Try Again</Text>
-                    </TouchableOpacity>
-                </View>
+                        <TouchableOpacity 
+                            style={styles.button} 
+                            onPress={this.handleRetry}
+                            activeOpacity={0.7}
+                        >
+                            <Text style={styles.buttonText}>Try Again</Text>
+                        </TouchableOpacity>
+                    </View>
+                </SafeAreaView>
             );
         }
 
@@ -56,42 +70,50 @@ export class ErrorBoundary extends Component<Props, State> {
 }
 
 const styles = StyleSheet.create({
+    safe: {
+        flex: 1,
+        backgroundColor: theme.colors.background,
+    },
     container: {
         flex: 1,
-        backgroundColor: '#121212',
         justifyContent: 'center',
         alignItems: 'center',
-        padding: 20,
+        padding: theme.spacing.xl,
+    },
+    iconContainer: {
+        marginBottom: theme.spacing.l,
     },
     title: {
-        color: '#FFF',
-        fontSize: 24,
-        fontWeight: 'bold',
-        marginTop: 20,
-        marginBottom: 10,
+        ...theme.typography.h2,
+        textAlign: 'center',
+        marginBottom: theme.spacing.s,
     },
     subtitle: {
-        color: '#AAA',
-        fontSize: 16,
+        ...theme.typography.body,
+        color: theme.colors.textSecondary,
         textAlign: 'center',
-        marginBottom: 20,
+        marginBottom: theme.spacing.xl,
+    },
+    errorBox: {
+        width: '100%',
+        backgroundColor: theme.colors.surfaceSecondary,
+        padding: theme.spacing.m,
+        borderRadius: theme.borderRadius.m,
+        marginBottom: theme.spacing.xxl,
     },
     errorText: {
-        color: theme.colors.error,
-        fontSize: 12,
-        marginBottom: 30,
-        textAlign: 'center',
-        fontFamily: 'Courier',
+        ...theme.typography.caption,
+        color: theme.colors.textSecondary,
+        fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
     },
     button: {
         backgroundColor: theme.colors.primary,
-        paddingHorizontal: 24,
-        paddingVertical: 12,
-        borderRadius: 25,
+        paddingHorizontal: 32,
+        paddingVertical: 16,
+        borderRadius: theme.borderRadius.round,
+        ...theme.shadows.button,
     },
     buttonText: {
-        color: '#FFF',
-        fontWeight: 'bold',
-        fontSize: 16,
-    }
+        ...theme.typography.button,
+    },
 });

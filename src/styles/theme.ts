@@ -15,6 +15,10 @@ export const theme = {
         separator: '#C6C6C8',  // System Separator
         cardShadow: 'rgba(0, 0, 0, 0.1)',
         cardBorder: 'rgba(0, 0, 0, 0.05)',
+        black: '#000000',
+        white: '#FFFFFF',
+        overlayDark: 'rgba(0, 0, 0, 0.5)',
+        overlayDeep: 'rgba(0, 0, 0, 0.7)',
     },
     spacing: {
         unit: 8,

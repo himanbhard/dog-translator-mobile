@@ -4,7 +4,7 @@ import { Logger } from '../services/Logger';
 import { getAppCheckToken } from '../services/appCheck';
 
 // Google Cloud Run Endpoint
-const API_URL = 'https://dog-translator-service-736369571076.us-east1.run.app';
+const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
 const client = axios.create({
     baseURL: API_URL,

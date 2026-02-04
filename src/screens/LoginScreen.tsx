@@ -22,7 +22,7 @@ export default function LoginScreen() {
 
     const configureGoogleSignIn = () => {
         GoogleSignin.configure({
-            webClientId: '736369571076-4oag5ad2rss77dflac5uiemfiohk3cn7.apps.googleusercontent.com',
+            webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
             offlineAccess: true,
         });
     };
@@ -108,6 +108,8 @@ export default function LoginScreen() {
                                 autoCapitalize="none"
                                 keyboardType="email-address"
                                 autoCorrect={false}
+                                accessibilityLabel="Email input"
+                                accessibilityHint="Enter your email address"
                             />
                         </View>
 
@@ -120,6 +122,8 @@ export default function LoginScreen() {
                                 value={password}
                                 onChangeText={setPassword}
                                 secureTextEntry
+                                accessibilityLabel="Password input"
+                                accessibilityHint="Enter your password"
                             />
                         </View>
 
@@ -128,12 +132,15 @@ export default function LoginScreen() {
                             onPress={handleAuth}
                             loading={loading}
                             style={styles.submitButton}
+                            accessibilityLabel={isLogin ? 'Sign In button' : 'Create Account button'}
                         />
 
                         <TouchableOpacity 
                             onPress={() => setIsLogin(!isLogin)} 
                             style={styles.switchButton}
                             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                            accessibilityLabel={isLogin ? "Go to Sign Up screen" : "Go to Log In screen"}
+                            accessibilityRole="button"
                         >
                             <Text style={styles.switchText}>
                                 {isLogin ? "Don't have an account? " : "Already have an account? "}

@@ -11,6 +11,9 @@ interface ButtonProps {
     style?: ViewStyle;
     textStyle?: TextStyle;
     icon?: React.ReactNode;
+    accessibilityLabel?: string;
+    accessibilityHint?: string;
+    accessibilityRole?: 'button' | 'link' | 'image' | 'header';
 }
 
 /**
@@ -24,7 +27,10 @@ export const Button: React.FC<ButtonProps> = ({
     disabled = false,
     style,
     textStyle,
-    icon
+    icon,
+    accessibilityLabel,
+    accessibilityHint,
+    accessibilityRole = 'button'
 }) => {
     const isPrimary = variant === 'primary';
     const isSecondary = variant === 'secondary';
@@ -56,6 +62,10 @@ export const Button: React.FC<ButtonProps> = ({
             activeOpacity={0.7}
             disabled={disabled || loading}
             style={containerStyles}
+            accessibilityLabel={accessibilityLabel || title}
+            accessibilityHint={accessibilityHint}
+            accessibilityRole={accessibilityRole}
+            accessibilityState={{ disabled: disabled || loading }}
         >
             {loading ? (
                 <ActivityIndicator color={isPrimary ? '#FFFFFF' : theme.colors.primary} />
