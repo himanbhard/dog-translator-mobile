@@ -12,7 +12,7 @@
 
 ## Build & Test (Android)
 - [x] Build Android APK (Internal/Emulator) <!-- id: android-build -->
-- [/] EAS Build Preview APK <!-- id: eas-build -->
+- [x] EAS Build Preview APK <!-- id: eas-build -->
 
 ## Troubleshooting Build Failure
 - [x] Verify local bundle generation (Check for JS errors) <!-- id: local-bundle -->
