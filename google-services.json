@@ -9,7 +9,7 @@
       "client_info": {
         "mobilesdk_app_id": "1:736369571076:android:dbc8dd7dff8d49d02bcc51",
         "android_client_info": {
-          "package_name": "com.anonymous.dogtranslatorandroid"
+          "package_name": "com.himanbhard.dogtranslator"
         }
       },
       "oauth_client": [
@@ -17,7 +17,7 @@
           "client_id": "736369571076-p86g3sh3kejqgqp25t9t6r5sq9kn8dh8.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
-            "package_name": "com.anonymous.dogtranslatorandroid",
+            "package_name": "com.himanbhard.dogtranslator",
             "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
           }
         },
@@ -42,7 +42,7 @@
               "client_id": "736369571076-nl88m7nkgh81qlcf365fnq6uoq094epg.apps.googleusercontent.com",
               "client_type": 2,
               "ios_info": {
-                "bundle_id": "com.anonymous.dogtranslatorandroid"
+                "bundle_id": "com.himanbhard.dogtranslator"
               }
             }
           ]

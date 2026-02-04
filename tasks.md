@@ -11,18 +11,18 @@
 - [x] Configure EAS for Android Build (`eas.json`) <!-- id: eas-config -->
 
 ## Build & Test (Android)
-- [ ] Build Android APK (Internal/Emulator) <!-- id: android-build -->
+- [x] Build Android APK (Internal/Emulator) <!-- id: android-build -->
 
 ## Troubleshooting Build Failure
 - [x] Verify local bundle generation (Check for JS errors) <!-- id: local-bundle -->
 - [x] Configure `eas.json` to use Bun <!-- id: eas-bun-config -->
 - [x] Clean and Sync Android Native Project <!-- id: android-clean -->
 - [x] Install Android SDK and Java 17 <!-- id: sdk-install -->
-- [/] Debugging Build Failure: google-services.json package name mismatch <!-- id: debug-failure -->
-- [ ] Retry Android APK Build <!-- id: retry-build -->
+- [x] Debugging Build Failure: google-services.json package name mismatch <!-- id: debug-failure -->
+- [x] Retry Android APK Build <!-- id: retry-build -->
 
 ## Verification
-- [ ] Verify APK on Emulator/Device <!-- id: android-verify -->
+- [/] Verify APK on Emulator/Device <!-- id: android-verify -->
 
 ## Improvements & Cleanup
 - [ ] Code Styling: Setup Prettier & integrate with ESLint <!-- id: prettier-setup -->
