@@ -21,7 +21,7 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.anonymous.dogtranslatorandroid"
+      "package": "com.himanbhard.dogtranslator"
     },
     "web": {
       "output": "single",
@@ -55,6 +55,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "9d4f0532-a45e-4dcc-ae70-9076a2b75e89"
+      }
+    },
+    "owner": "jed1kn1ghtf0rce1337"
   }
 }
