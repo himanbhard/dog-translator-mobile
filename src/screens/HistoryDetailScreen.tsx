@@ -5,13 +5,14 @@ import { Alert, Share, StyleSheet, Text, View, Image } from 'react-native';
 import { ScreenWrapper } from '../components/ui/ScreenWrapper';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
+import { BehaviorInsightsSection } from '../components/BehaviorInsightsSection';
 import { theme } from '../styles/theme';
 
 export default function HistoryDetailScreen() {
     const route = useRoute();
     const navigation = useNavigation();
     const params = route.params as any;
-    
+
     // Safety check for item
     const item = params?.item;
 
@@ -27,11 +28,11 @@ export default function HistoryDetailScreen() {
     }
 
     const metadata = item.metadata;
-    const date = new Date(item.timestamp).toLocaleDateString(undefined, { 
-        weekday: 'long', 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric' 
+    const date = new Date(item.timestamp).toLocaleDateString(undefined, {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
     });
 
     const handleShare = async () => {
@@ -73,9 +74,9 @@ export default function HistoryDetailScreen() {
                             </Text>
                         </View>
                     </View>
-                    
+
                     <Text style={styles.explanation}>{metadata.explanation}</Text>
-                    
+
                     {metadata.breed && (
                         <View style={styles.breedContainer}>
                             <Ionicons name="paw" size={16} color={theme.colors.textSecondary} />
@@ -83,6 +84,8 @@ export default function HistoryDetailScreen() {
                         </View>
                     )}
                 </Card>
+
+                <BehaviorInsightsSection behavior={metadata.explanation} />
 
                 <View style={styles.actions}>
                     <Button
