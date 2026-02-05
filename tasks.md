@@ -20,13 +20,14 @@
 - [x] Clean and Sync Android Native Project <!-- id: android-clean -->
 - [x] Install Android SDK and Java 17 <!-- id: sdk-install -->
 - [x] Debugging Build Failure: google-services.json package name mismatch <!-- id: debug-failure -->
-- [x] Retry Android APK Build <!-- id: retry-build -->
+- [/] Retry Android APK Build <!-- id: retry-build -->
 
 ## Verification
 - [x] Debugging Runtime Crash: Identified missing environment variables in JS bundle <!-- id: debug-crash -->
 - [x] Fix Runtime Crash: Created .env and updated eas.json with Firebase keys <!-- id: fix-crash -->
 - [x] Fix Runtime Crash: Corrected MainApplication.kt entry point <!-- id: fix-entry-point -->
 - [x] Fix Runtime Crash: Corrected component name in index.js and MainActivity.kt <!-- id: fix-component-name -->
+- [ ] Fix Runtime Crash: Add gesture handler import and remove conflicting splash screen <!-- id: fix-startup-crash-2 -->
 - [x] Verify local bundle generation (Fixed missing env vars) <!-- id: verify-bundle -->
 - [/] Verify APK on Emulator/Device (Awaiting download) <!-- id: android-verify -->
 
