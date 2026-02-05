@@ -1,4 +1,4 @@
-package com.anonymous.dogtranslatorandroid
+package com.himanbhard.dogtranslator
 import expo.modules.splashscreen.SplashScreenManager
 
 import android.os.Build

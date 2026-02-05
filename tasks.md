@@ -23,7 +23,10 @@
 - [x] Retry Android APK Build <!-- id: retry-build -->
 
 ## Verification
-- [/] Verify APK on Emulator/Device <!-- id: android-verify -->
+- [x] Debugging Runtime Crash: Identified missing environment variables in JS bundle <!-- id: debug-crash -->
+- [x] Fix Runtime Crash: Created .env and updated eas.json with Firebase keys <!-- id: fix-crash -->
+- [x] Verify local bundle generation (Fixed missing env vars) <!-- id: verify-bundle -->
+- [/] Verify APK on Emulator/Device (Awaiting download) <!-- id: android-verify -->
 
 ## Improvements & Cleanup
 - [ ] Code Styling: Setup Prettier & integrate with ESLint <!-- id: prettier-setup -->

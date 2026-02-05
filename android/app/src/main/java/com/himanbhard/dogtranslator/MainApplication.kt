@@ -1,4 +1,4 @@
-package com.anonymous.dogtranslatorandroid
+package com.himanbhard.dogtranslator
 
 import android.app.Application
 import android.content.res.Configuration
