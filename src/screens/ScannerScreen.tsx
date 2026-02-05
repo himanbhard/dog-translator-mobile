@@ -21,6 +21,7 @@ import { ToneSelector, Tone } from '../components/scanner/ToneSelector';
 import { LoadingOverlay } from '../components/scanner/LoadingOverlay';
 import { CameraControls } from '../components/scanner/CameraControls';
 import { CameraView } from '../components/scanner/CameraView';
+import { ResultModal } from '../components/scanner/ResultModal';
 
 export default function ScannerScreen() {
     const { status, isGranted, isBlocked, isLimited, request, openSettings, refresh } = usePermission('camera');
@@ -29,6 +30,9 @@ export default function ScannerScreen() {
     const cameraRef = useRef<Camera>(null);
     const [isanalyzing, setIsAnalyzing] = useState(false);
     const [isSpeaking, setIsSpeaking] = useState(false);
+    const [analysisResult, setAnalysisResult] = useState<any>(null);
+    const [currentImageUri, setCurrentImageUri] = useState<string | null>(null);
+    const [showResultModal, setShowResultModal] = useState(false);
 
     const { autoSpeak, isPremium, dailyScans, incrementScanCount, checkResetDailyScans } = useSettingsStore();
     const { activePetId } = usePetStore();
@@ -106,12 +110,15 @@ export default function ScannerScreen() {
         }
 
         setIsAnalyzing(true);
+        setCurrentImageUri(uri);
         try {
             const result = await analyzeImage(uri, tone.toLowerCase());
             setIsAnalyzing(false);
 
             if (result && result.status === 'ok') {
                 incrementScanCount();
+                setAnalysisResult(result);
+                setShowResultModal(true);
 
                 if (autoSpeak) {
                     setIsSpeaking(true);
@@ -121,35 +128,28 @@ export default function ScannerScreen() {
                         onError: () => setIsSpeaking(false),
                     }).catch(() => setIsSpeaking(false));
                 }
-
-                Alert.alert(
-                    '🐕 Interpretation Ready',
-                    result.explanation,
-                    [
-                        {
-                            text: 'Save to History',
-                            onPress: async () => {
-                                try {
-                                    const permanentPath = await saveImageToInternalStorage(uri);
-                                    await addHistoryEntry(permanentPath, {
-                                        explanation: result.explanation,
-                                        confidence: result.confidence,
-                                        tone: tone,
-                                        breed: result.breed || 'Unknown',
-                                    }, activePetId);
-                                    Alert.alert("Success", "Saved to history!");
-                                } catch (e) {
-                                    Alert.alert("Error", "Failed to save locally.");
-                                }
-                            }
-                        },
-                        { text: 'Done', style: 'cancel' }
-                    ]
-                );
             }
         } catch (error: any) {
             setIsAnalyzing(false);
             Alert.alert('Analysis Error', error.message);
+        }
+    };
+
+    const handleSaveResult = async () => {
+        if (!analysisResult || !currentImageUri) return;
+        
+        try {
+            const permanentPath = await saveImageToInternalStorage(currentImageUri);
+            await addHistoryEntry(permanentPath, {
+                explanation: analysisResult.explanation,
+                confidence: analysisResult.confidence,
+                tone: tone,
+                breed: analysisResult.breed || 'Unknown',
+            }, activePetId);
+            Alert.alert("Success", "Saved to history!");
+            setShowResultModal(false);
+        } catch (e) {
+            Alert.alert("Error", "Failed to save locally.");
         }
     };
 
@@ -193,6 +193,14 @@ export default function ScannerScreen() {
                     onPickImage={pickImage}
                 />
             </View>
+
+            <ResultModal
+                visible={showResultModal}
+                onClose={() => setShowResultModal(false)}
+                onSave={handleSaveResult}
+                result={analysisResult}
+                imageUri={currentImageUri}
+            />
 
             {isanalyzing && <LoadingOverlay />}
 

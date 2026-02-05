@@ -18,7 +18,7 @@ export const CameraControls: React.FC<CameraControlsProps> = ({ onCapture, onPic
                     accessibilityLabel="Select image from gallery"
                     accessibilityRole="button"
                 >
-                    <Ionicons name="images-outline" size={28} color="#FFF" />
+                    <Ionicons name="images" size={28} color="#FFF" />
                 </TouchableOpacity>
 
                 <TouchableOpacity 
@@ -31,7 +31,12 @@ export const CameraControls: React.FC<CameraControlsProps> = ({ onCapture, onPic
                     <View style={styles.captureInner} />
                 </TouchableOpacity>
 
-                <View style={styles.placeholder} />
+                <TouchableOpacity 
+                    onPress={onPickImage}
+                    style={styles.uploadLabelButton}
+                >
+                    <Text style={styles.uploadText}>Upload</Text>
+                </TouchableOpacity>
             </View>
         </View>
     );
@@ -40,6 +45,7 @@ export const CameraControls: React.FC<CameraControlsProps> = ({ onCapture, onPic
 const styles = StyleSheet.create({
     container: {
         width: '100%',
+        paddingBottom: 20,
     },
     controls: {
         flexDirection: 'row',
@@ -47,28 +53,39 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     captureButton: {
-        width: 80,
-        height: 80,
-        borderRadius: 40,
+        width: 84,
+        height: 84,
+        borderRadius: 42,
         backgroundColor: 'rgba(255,255,255,0.3)',
         justifyContent: 'center',
         alignItems: 'center',
     },
     captureInner: {
-        width: 64,
-        height: 64,
-        borderRadius: 32,
+        width: 68,
+        height: 68,
+        borderRadius: 34,
         backgroundColor: '#FFF',
+        borderWidth: 2,
+        borderColor: 'rgba(0,0,0,0.1)',
     },
     secondaryButton: {
-        width: 50,
-        height: 50,
-        borderRadius: 25,
+        width: 56,
+        height: 56,
+        borderRadius: 28,
         backgroundColor: 'rgba(0,0,0,0.5)',
         justifyContent: 'center',
         alignItems: 'center',
     },
-    placeholder: {
-        width: 50,
+    uploadLabelButton: {
+        width: 56,
+        alignItems: 'center',
+    },
+    uploadText: {
+        color: '#FFF',
+        fontWeight: '600',
+        fontSize: 12,
+        textShadowColor: 'rgba(0,0,0,0.5)',
+        textShadowOffset: { width: 0, height: 1 },
+        textShadowRadius: 2,
     }
 });

@@ -41,6 +41,12 @@
 - [x] Handle blocked/limited/restricted states with appropriate messaging <!-- id: permission-states -->
 - [ ] Extend pattern to Gallery picker (photo library permission) <!-- id: permission-gallery -->
 
+## Phase 2: Core Feature - Photo-based Translation
+- [x] Integrate Camera/Gallery pickers <!-- id: camera-gallery -->
+- [x] Send image to backend and display result <!-- id: image-analysis -->
+- [/] Improve UI for translation results (Replace Alerts with Modals) <!-- id: ui-result-modal -->
+- [ ] Implement clear "Upload Image" feature for easier access <!-- id: upload-feature -->
+
 ## Improvements & Cleanup
 - [ ] Code Styling: Setup Prettier & integrate with ESLint <!-- id: prettier-setup -->
 - [ ] Testing: Add unit tests for Store and API services <!-- id: unit-tests -->

@@ -41,9 +41,17 @@ export default function PetListScreen() {
                     <Text style={styles.name}>{item.name}</Text>
                     <Text style={styles.details}>{item.age} years • {item.gender}</Text>
                 </View>
-                {activePetId === item.id && (
-                    <Ionicons name="checkmark-circle" size={24} color={theme.colors.primary} />
-                )}
+                <View style={styles.actions}>
+                    {activePetId === item.id && (
+                        <Ionicons name="checkmark-circle" size={24} color={theme.colors.primary} style={{ marginRight: 8 }} />
+                    )}
+                    <TouchableOpacity 
+                        onPress={() => navigation.navigate('Scan')}
+                        style={styles.translateIcon}
+                    >
+                        <Ionicons name="scan-circle" size={32} color={theme.colors.primary} />
+                    </TouchableOpacity>
+                </View>
             </Card>
         </TouchableOpacity>
     );
@@ -125,6 +133,13 @@ const styles = StyleSheet.create({
     },
     info: {
         flex: 1,
+    },
+    actions: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    translateIcon: {
+        padding: 4,
     },
     name: {
         ...theme.typography.headline,
