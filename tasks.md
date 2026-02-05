@@ -25,6 +25,8 @@
 ## Verification
 - [x] Debugging Runtime Crash: Identified missing environment variables in JS bundle <!-- id: debug-crash -->
 - [x] Fix Runtime Crash: Created .env and updated eas.json with Firebase keys <!-- id: fix-crash -->
+- [x] Fix Runtime Crash: Corrected MainApplication.kt entry point <!-- id: fix-entry-point -->
+- [x] Fix Runtime Crash: Corrected component name in index.js and MainActivity.kt <!-- id: fix-component-name -->
 - [x] Verify local bundle generation (Fixed missing env vars) <!-- id: verify-bundle -->
 - [/] Verify APK on Emulator/Device (Awaiting download) <!-- id: android-verify -->
 
