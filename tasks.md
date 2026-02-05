@@ -35,6 +35,12 @@
 - [/] Fix Google Sign-In "Developer Error": Add EAS keystore SHA-1 to Firebase Console <!-- id: fix-google-signin -->
 - [x] Fix Camera permission stuck: Handle permission callback and refresh state <!-- id: fix-camera-permission -->
 
+## Resilient Permission Pattern
+- [x] Create `usePermission` hook with AppState listener <!-- id: permission-hook -->
+- [x] Add "Open Settings" + "Refresh" fallback UI to ScannerScreen <!-- id: permission-fallback-ui -->
+- [x] Handle blocked/limited/restricted states with appropriate messaging <!-- id: permission-states -->
+- [ ] Extend pattern to Gallery picker (photo library permission) <!-- id: permission-gallery -->
+
 ## Improvements & Cleanup
 - [ ] Code Styling: Setup Prettier & integrate with ESLint <!-- id: prettier-setup -->
 - [ ] Testing: Add unit tests for Store and API services <!-- id: unit-tests -->

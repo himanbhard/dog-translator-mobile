@@ -1,4 +1,4 @@
-import { Camera, useCameraDevice, useCameraPermission } from 'react-native-vision-camera';
+import { Camera, useCameraDevice } from 'react-native-vision-camera';
 import { launchImageLibrary } from 'react-native-image-picker';
 import React, { useEffect, useRef, useState } from 'react';
 import { Alert, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -14,6 +14,7 @@ import { addToQueue } from '../services/offlineQueue';
 import { ScreenWrapper } from '../components/ui/ScreenWrapper';
 import { usePetStore } from '../store/usePetStore';
 import { Button } from '../components/ui/Button';
+import { usePermission } from '../hooks/usePermission';
 
 // Refactored Components
 import { ToneSelector, Tone } from '../components/scanner/ToneSelector';
@@ -22,40 +23,54 @@ import { CameraControls } from '../components/scanner/CameraControls';
 import { CameraView } from '../components/scanner/CameraView';
 
 export default function ScannerScreen() {
-    const { hasPermission, requestPermission } = useCameraPermission();
+    const { status, isGranted, isBlocked, isLimited, request, openSettings, refresh } = usePermission('camera');
     const device = useCameraDevice('back');
     const [tone, setTone] = useState<Tone>('Playful');
     const cameraRef = useRef<Camera>(null);
     const [isanalyzing, setIsAnalyzing] = useState(false);
     const [isSpeaking, setIsSpeaking] = useState(false);
-    const [permissionGranted, setPermissionGranted] = useState(hasPermission);
 
     const { autoSpeak, isPremium, dailyScans, incrementScanCount, checkResetDailyScans } = useSettingsStore();
     const { activePetId } = usePetStore();
 
     useEffect(() => {
         checkResetDailyScans();
-        const checkPermission = async () => {
-            if (!hasPermission) {
-                const granted = await requestPermission();
-                setPermissionGranted(granted);
-            } else {
-                setPermissionGranted(true);
-            }
-        };
-        checkPermission();
-    }, [hasPermission]);
+        // Auto-request if undetermined
+        if (status === 'undetermined') {
+            request();
+        }
+    }, [status]);
 
-    if (!permissionGranted) {
+    // Permission blocked - user must go to Settings
+    if (isBlocked) {
+        return (
+            <ScreenWrapper>
+                <View style={styles.centerContent}>
+                    <Ionicons name="lock-closed-outline" size={80} color={theme.colors.error} />
+                    <Text style={styles.permissionTitle}>Camera Access Blocked</Text>
+                    <Text style={styles.permissionText}>
+                        You've previously denied camera access. Please enable it in Settings to use this feature.
+                    </Text>
+                    <Button title="Open Settings" onPress={openSettings} style={styles.permissionButton} />
+                    <TouchableOpacity onPress={refresh} style={styles.refreshLink}>
+                        <Text style={styles.refreshText}>I've enabled it, refresh</Text>
+                    </TouchableOpacity>
+                </View>
+            </ScreenWrapper>
+        );
+    }
+
+    // Permission not granted yet
+    if (!isGranted) {
         return (
             <ScreenWrapper>
                 <View style={styles.centerContent}>
                     <Ionicons name="camera-outline" size={80} color={theme.colors.textSecondary} />
                     <Text style={styles.permissionText}>Camera permission is required to analyze your dog's behavior.</Text>
-                    <Button title="Grant Permission" onPress={async () => {
-                        const granted = await requestPermission();
-                        setPermissionGranted(granted);
-                    }} />
+                    <Button title="Grant Permission" onPress={request} style={styles.permissionButton} />
+                    <TouchableOpacity onPress={refresh} style={styles.refreshLink}>
+                        <Text style={styles.refreshText}>Refresh status</Text>
+                    </TouchableOpacity>
                 </View>
             </ScreenWrapper>
         );
@@ -230,5 +245,23 @@ const styles = StyleSheet.create({
         borderRadius: 22,
         justifyContent: 'center',
         alignItems: 'center',
-    }
+    },
+    permissionTitle: {
+        ...theme.typography.h2,
+        marginBottom: theme.spacing.s,
+        textAlign: 'center',
+    },
+    permissionButton: {
+        marginTop: theme.spacing.m,
+        minWidth: 200,
+    },
+    refreshLink: {
+        marginTop: theme.spacing.l,
+        padding: theme.spacing.s,
+    },
+    refreshText: {
+        ...theme.typography.caption,
+        color: theme.colors.primary,
+        textDecorationLine: 'underline',
+    },
 });
