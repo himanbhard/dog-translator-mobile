@@ -27,9 +27,13 @@
 - [x] Fix Runtime Crash: Created .env and updated eas.json with Firebase keys <!-- id: fix-crash -->
 - [x] Fix Runtime Crash: Corrected MainApplication.kt entry point <!-- id: fix-entry-point -->
 - [x] Fix Runtime Crash: Corrected component name in index.js and MainActivity.kt <!-- id: fix-component-name -->
-- [ ] Fix Runtime Crash: Add gesture handler import and remove conflicting splash screen <!-- id: fix-startup-crash-2 -->
+- [x] Fix Runtime Crash: Add gesture handler import and remove conflicting splash screen <!-- id: fix-startup-crash-2 -->
 - [x] Verify local bundle generation (Fixed missing env vars) <!-- id: verify-bundle -->
 - [/] Verify APK on Emulator/Device (Awaiting download) <!-- id: android-verify -->
+
+## Bug Fixes (Post-Build)
+- [/] Fix Google Sign-In "Developer Error": Add EAS keystore SHA-1 to Firebase Console <!-- id: fix-google-signin -->
+- [/] Fix Camera permission stuck: Handle permission callback and refresh state <!-- id: fix-camera-permission -->
 
 ## Improvements & Cleanup
 - [ ] Code Styling: Setup Prettier & integrate with ESLint <!-- id: prettier-setup -->

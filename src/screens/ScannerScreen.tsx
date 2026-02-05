@@ -28,24 +28,34 @@ export default function ScannerScreen() {
     const cameraRef = useRef<Camera>(null);
     const [isanalyzing, setIsAnalyzing] = useState(false);
     const [isSpeaking, setIsSpeaking] = useState(false);
-    
+    const [permissionGranted, setPermissionGranted] = useState(hasPermission);
+
     const { autoSpeak, isPremium, dailyScans, incrementScanCount, checkResetDailyScans } = useSettingsStore();
     const { activePetId } = usePetStore();
 
     useEffect(() => {
         checkResetDailyScans();
-        if (!hasPermission) {
-            requestPermission();
-        }
+        const checkPermission = async () => {
+            if (!hasPermission) {
+                const granted = await requestPermission();
+                setPermissionGranted(granted);
+            } else {
+                setPermissionGranted(true);
+            }
+        };
+        checkPermission();
     }, [hasPermission]);
 
-    if (!hasPermission) {
+    if (!permissionGranted) {
         return (
             <ScreenWrapper>
                 <View style={styles.centerContent}>
                     <Ionicons name="camera-outline" size={80} color={theme.colors.textSecondary} />
                     <Text style={styles.permissionText}>Camera permission is required to analyze your dog's behavior.</Text>
-                    <Button title="Grant Permission" onPress={requestPermission} />
+                    <Button title="Grant Permission" onPress={async () => {
+                        const granted = await requestPermission();
+                        setPermissionGranted(granted);
+                    }} />
                 </View>
             </ScreenWrapper>
         );
@@ -87,7 +97,7 @@ export default function ScannerScreen() {
 
             if (result && result.status === 'ok') {
                 incrementScanCount();
-                
+
                 if (autoSpeak) {
                     setIsSpeaking(true);
                     speak(result.explanation, {
@@ -149,21 +159,21 @@ export default function ScannerScreen() {
     return (
         <View style={styles.container}>
             <StatusBar barStyle="light-content" />
-            
-            <CameraView 
+
+            <CameraView
                 ref={cameraRef}
                 device={device}
             />
 
             <View style={styles.topOverlay}>
-                <ToneSelector 
+                <ToneSelector
                     activeTone={tone}
                     onToneChange={setTone}
                 />
             </View>
 
             <View style={styles.bottomOverlay}>
-                <CameraControls 
+                <CameraControls
                     onCapture={takePicture}
                     onPickImage={pickImage}
                 />
