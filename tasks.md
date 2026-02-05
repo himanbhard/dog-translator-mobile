@@ -33,7 +33,7 @@
 
 ## Bug Fixes (Post-Build)
 - [/] Fix Google Sign-In "Developer Error": Add EAS keystore SHA-1 to Firebase Console <!-- id: fix-google-signin -->
-- [/] Fix Camera permission stuck: Handle permission callback and refresh state <!-- id: fix-camera-permission -->
+- [x] Fix Camera permission stuck: Handle permission callback and refresh state <!-- id: fix-camera-permission -->
 
 ## Improvements & Cleanup
 - [ ] Code Styling: Setup Prettier & integrate with ESLint <!-- id: prettier-setup -->
