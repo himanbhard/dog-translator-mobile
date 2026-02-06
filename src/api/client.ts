@@ -4,7 +4,18 @@ import { Logger } from '../services/Logger';
 import { getAppCheckToken } from '../services/appCheck';
 
 // Google Cloud Run Endpoint
-const API_URL = process.env.EXPO_PUBLIC_API_URL;
+// Fallback URL in case environment variable is not loaded
+const FALLBACK_API_URL = 'https://dog-translator-service-736369571076.us-east1.run.app';
+const API_URL = process.env.EXPO_PUBLIC_API_URL || FALLBACK_API_URL;
+
+// Debug: Log API URL on module load
+console.log('🔧 API Client Configuration:');
+console.log('   EXPO_PUBLIC_API_URL from env:', process.env.EXPO_PUBLIC_API_URL || '❌ UNDEFINED');
+console.log('   Using API_URL:', API_URL);
+
+if (!process.env.EXPO_PUBLIC_API_URL) {
+    console.warn('⚠️ EXPO_PUBLIC_API_URL not found in environment, using fallback URL');
+}
 
 const client = axios.create({
     baseURL: API_URL,
@@ -29,26 +40,37 @@ client.interceptors.request.use(
         // Log Request
         Logger.info(`➡️ REQUEST: ${config.method?.toUpperCase()} ${config.url} `);
 
-        // Get fresh token from Firebase
-        const token = await auth.currentUser?.getIdToken();
+        // Get fresh token from Firebase (wrapped in try-catch to prevent failures)
+        try {
+            const currentUser = auth.currentUser;
+            console.log('🔐 Auth State:', currentUser ? `User: ${currentUser.email}` : '❌ NOT LOGGED IN');
 
-        if (token) {
-            config.headers.Authorization = `Bearer ${token} `;
+            if (currentUser) {
+                const token = await currentUser.getIdToken();
+                if (token) {
+                    config.headers.Authorization = `Bearer ${token}`;
+                    console.log('✅ Authorization header set');
+                }
+            } else {
+                console.warn('⚠️ No authenticated user - request will be sent without Authorization header');
+            }
+        } catch (authError) {
+            console.error('❌ Failed to get Firebase auth token:', authError);
+            // Continue without auth token - the backend will return 401 if auth is required
         }
 
-        // Get App Check token
-        let appCheckToken: string | null = null;
+        // Get App Check token (optional, don't fail if it doesn't work)
         try {
-            // const { getAppCheckToken } = await import('../services/appCheck');
-            appCheckToken = await getAppCheckToken();
+            const appCheckToken = await getAppCheckToken();
             if (appCheckToken) {
                 config.headers['X-Firebase-AppCheck'] = appCheckToken;
-                console.warn('✅ App Check Header SET:', appCheckToken.substring(0, 20) + '...');
+                console.log('✅ App Check Header SET');
             } else {
-                console.error('❌ App Check token is NULL - NO HEADER WILL BE SENT');
+                console.warn('⚠️ App Check token is NULL - continuing without it');
             }
         } catch (e) {
             console.error('❌ App Check token fetch FAILED:', e);
+            // Continue without App Check - backend should still work
         }
 
 

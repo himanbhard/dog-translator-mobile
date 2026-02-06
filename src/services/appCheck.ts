@@ -33,9 +33,15 @@ export async function getAppCheckToken(): Promise<string | null> {
         if (!isInitialized) {
             await initializeAppCheck();
         }
-        // Force refresh to get a valid token
-        const tokenResult = await firebase.appCheck().getToken(true);
-        return tokenResult.token;
+
+        // Add timeout to prevent hanging
+        const timeoutPromise = new Promise<null>((_, reject) => {
+            setTimeout(() => reject(new Error('App Check token timeout')), 5000);
+        });
+
+        const tokenPromise = firebase.appCheck().getToken(true).then(r => r.token);
+
+        return await Promise.race([tokenPromise, timeoutPromise]);
     } catch (error) {
         console.error('❌ [AppCheck] Failed to get token:', error);
         return null;

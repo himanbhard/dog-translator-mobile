@@ -18,12 +18,21 @@ export interface InterpretationResult {
  */
 export const analyzeImage = async (uri: string, tone: string = 'playful'): Promise<InterpretationResult> => {
     try {
-        Logger.info('🔵 Step 1: Compressing image...');
+        Logger.info('🔵 Step 1: Starting analysis for URI:', uri);
+
+        // Verify image URI exists
+        if (!uri) {
+            throw new Error('Image URI is undefined or empty');
+        }
+
+        Logger.info('🔵 Step 2: Compressing image...');
         const manipulated = await ImageManipulator.manipulateAsync(
             uri,
             [{ resize: { width: 800 } }],
             { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG }
         );
+
+        Logger.info('🔵 Step 3: Image compressed to:', manipulated.uri);
 
         const formData = new FormData();
         let fileUri = manipulated.uri;
@@ -39,14 +48,25 @@ export const analyzeImage = async (uri: string, tone: string = 'playful'): Promi
         formData.append('tone', tone);
         formData.append('save', 'true');
 
-        Logger.info('🔵 Step 2: Sending to API...');
+        Logger.info('🔵 Step 4: FormData created, sending to API...');
+        Logger.info('🔵 Target endpoint: /api/v1/interpret');
+
         const response = await client.post('/api/v1/interpret', formData);
-        
+
+        Logger.info('🔵 Step 5: Response received:', response.status);
         return response.data;
 
     } catch (error: any) {
+        Logger.error('❌ Analysis failed at step:', error.message);
+        Logger.error('❌ Error details:', JSON.stringify({
+            name: error.name,
+            code: error.code,
+            message: error.message,
+            response: error.response?.status,
+            responseData: error.response?.data,
+        }, null, 2));
+
         const apiError = ApiError.fromError(error);
-        Logger.error('❌ Analysis failed:', apiError.message, apiError.status);
         throw apiError;
     }
 };
