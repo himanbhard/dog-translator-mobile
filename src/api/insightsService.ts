@@ -26,9 +26,9 @@ export const getBehaviorInsights = async (behavior: string): Promise<InsightArti
 
         Logger.info('✅ Behavior insights received: ' + (response.data?.length || 0) + ' articles');
 
-        // Validate response structure
-        if (Array.isArray(response.data)) {
-            return response.data.map((item: any) => ({
+        // Handle backend response format: { status: "ok", results: [...] }
+        if (response.data?.results && Array.isArray(response.data.results)) {
+            return response.data.results.map((item: any) => ({
                 title: item.title || 'Untitled',
                 snippet: item.snippet || '',
                 url: item.url || '',
@@ -36,9 +36,9 @@ export const getBehaviorInsights = async (behavior: string): Promise<InsightArti
             }));
         }
 
-        // Handle case where API returns { articles: [...] }
-        if (response.data?.articles && Array.isArray(response.data.articles)) {
-            return response.data.articles.map((item: any) => ({
+        // Legacy/Fallback check
+        if (Array.isArray(response.data)) {
+            return response.data.map((item: any) => ({
                 title: item.title || 'Untitled',
                 snippet: item.snippet || '',
                 url: item.url || '',

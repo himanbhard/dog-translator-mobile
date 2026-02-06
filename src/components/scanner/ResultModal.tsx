@@ -4,6 +4,8 @@ import { theme } from '../../styles/theme';
 import { Button } from '../ui/Button';
 import { getExplanation } from '../../api/analysisService';
 import { Ionicons } from '@expo/vector-icons';
+import { BehaviorInsightsSection } from '../BehaviorInsightsSection';
+
 
 interface ResultModalProps {
     visible: boolean;
@@ -98,6 +100,9 @@ export const ResultModal: React.FC<ResultModalProps> = ({ visible, onClose, onSa
                                 <Text style={styles.explanationText}>{extraExplanation}</Text>
                             </View>
                         )}
+
+                        <View style={styles.divider} />
+                        <BehaviorInsightsSection behavior={result.explanation} />
                     </ScrollView>
 
                     <View style={styles.footer}>
@@ -219,5 +224,10 @@ const styles = StyleSheet.create({
         ...theme.typography.body,
         color: theme.colors.textSecondary,
         fontWeight: '600',
+    },
+    divider: {
+        height: 1,
+        backgroundColor: theme.colors.separator,
+        marginVertical: theme.spacing.l,
     }
 });
