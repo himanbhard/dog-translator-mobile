@@ -1,4 +1,4 @@
-import Ionicons from 'react-native-vector-icons/Ionicons';
+import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View, ScrollView } from 'react-native';
 import { Button } from '../components/ui/Button';
@@ -6,16 +6,21 @@ import { useSettingsStore } from '../store/settingsStore';
 import { theme } from '../styles/theme';
 import { ScreenWrapper } from '../components/ui/ScreenWrapper';
 
-interface PaywallScreenProps {
-    onClose: () => void;
-}
+// interface PaywallScreenProps removed
 
-export default function PaywallScreen({ onClose }: PaywallScreenProps) {
+import { useNavigation } from '@react-navigation/native';
+
+export default function PaywallScreen() {
     const { setPremiumStatus } = useSettingsStore();
+    const navigation = useNavigation();
 
     const handleMockPurchase = () => {
         setPremiumStatus(true);
-        onClose();
+        navigation.goBack();
+    };
+
+    const onClose = () => {
+        navigation.goBack();
     };
 
     return (
@@ -51,7 +56,7 @@ export default function PaywallScreen({ onClose }: PaywallScreenProps) {
                     </TouchableOpacity>
 
                     <Button title="Subscribe Now" onPress={handleMockPurchase} style={styles.buyButton} />
-                    
+
                     <Text style={styles.disclaimer}>
                         Payments will be charged to your App Store account. You can manage your subscription in settings.
                     </Text>

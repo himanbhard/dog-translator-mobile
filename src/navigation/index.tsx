@@ -1,7 +1,7 @@
 import React from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import Ionicons from 'react-native-vector-icons/Ionicons';
+import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../styles/theme';
 import { User } from 'firebase/auth';
 
@@ -51,10 +51,10 @@ const MainTabs = () => (
             },
             tabBarActiveTintColor: theme.colors.primary,
             tabBarInactiveTintColor: theme.colors.textSecondary,
-            tabBarStyle: { 
-                backgroundColor: theme.colors.surface, 
-                borderTopWidth: 0.5, 
-                borderTopColor: theme.colors.separator 
+            tabBarStyle: {
+                backgroundColor: theme.colors.surface,
+                borderTopWidth: 0.5,
+                borderTopColor: theme.colors.separator
             },
             headerShown: false,
         })}

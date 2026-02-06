@@ -1,6 +1,7 @@
-import Ionicons from 'react-native-vector-icons/Ionicons';
+import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import React from 'react';
+import { getExplanation } from '../api/analysisService';
+import React, { useState } from 'react';
 import { Alert, Share, StyleSheet, Text, View, Image } from 'react-native';
 import { ScreenWrapper } from '../components/ui/ScreenWrapper';
 import { Card } from '../components/ui/Card';
@@ -12,6 +13,8 @@ export default function HistoryDetailScreen() {
     const route = useRoute();
     const navigation = useNavigation();
     const params = route.params as any;
+    const [extraExplanation, setExtraExplanation] = useState<string | null>(null);
+    const [loadingExplanation, setLoadingExplanation] = useState(false);
 
     // Safety check for item
     const item = params?.item;
@@ -47,6 +50,20 @@ export default function HistoryDetailScreen() {
         }
     };
 
+    const handleExplain = async () => {
+        setLoadingExplanation(true);
+        try {
+            const data = await getExplanation(metadata.explanation, metadata.breed);
+            if (data && data.explanation) {
+                setExtraExplanation(data.explanation);
+            }
+        } catch (error) {
+            Alert.alert("Error", "Could not fetch explanation.");
+        } finally {
+            setLoadingExplanation(false);
+        }
+    };
+
     return (
         <ScreenWrapper withScrollView statusBarStyle="dark-content">
             <View style={styles.container}>
@@ -77,6 +94,16 @@ export default function HistoryDetailScreen() {
 
                     <Text style={styles.explanation}>{metadata.explanation}</Text>
 
+                    {extraExplanation && (
+                        <View style={[styles.explanation, { marginTop: 10, padding: 10, backgroundColor: theme.colors.surfaceSecondary, borderRadius: 8 }]}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 5 }}>
+                                <Ionicons name="sparkles" size={16} color={theme.colors.primary} style={{ marginRight: 6 }} />
+                                <Text style={{ color: theme.colors.primary, fontWeight: 'bold', fontSize: 12, textTransform: 'uppercase' }}>Deep Dive</Text>
+                            </View>
+                            <Text style={styles.explanation}>{extraExplanation}</Text>
+                        </View>
+                    )}
+
                     {metadata.breed && (
                         <View style={styles.breedContainer}>
                             <Ionicons name="paw" size={16} color={theme.colors.textSecondary} />
@@ -88,6 +115,16 @@ export default function HistoryDetailScreen() {
                 <BehaviorInsightsSection behavior={metadata.explanation} />
 
                 <View style={styles.actions}>
+                    {!extraExplanation && (
+                        <Button
+                            title="Explain Behavior"
+                            onPress={handleExplain}
+                            variant="secondary"
+                            loading={loadingExplanation}
+                            icon={<Ionicons name="bulb-outline" size={20} color={theme.colors.primary} />}
+                            style={styles.shareButton}
+                        />
+                    )}
                     <Button
                         title="Share Translation"
                         onPress={handleShare}

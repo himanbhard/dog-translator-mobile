@@ -2,7 +2,8 @@ import React from 'react';
 import { View, Text, Modal, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { theme } from '../../styles/theme';
 import { Button } from '../ui/Button';
-import Ionicons from 'react-native-vector-icons/Ionicons';
+import { getExplanation } from '../../api/analysisService';
+import { Ionicons } from '@expo/vector-icons';
 
 interface ResultModalProps {
     visible: boolean;
@@ -18,6 +19,32 @@ interface ResultModalProps {
 
 export const ResultModal: React.FC<ResultModalProps> = ({ visible, onClose, onSave, result, imageUri }) => {
     if (!result) return null;
+
+    const [extraExplanation, setExtraExplanation] = React.useState<string | null>(null);
+    const [loadingExplanation, setLoadingExplanation] = React.useState(false);
+
+    // Reset state when modal opens/closes or result changes
+    React.useEffect(() => {
+        if (visible) {
+            setExtraExplanation(null);
+            setLoadingExplanation(false);
+        }
+    }, [visible, result]);
+
+    const handleExplain = async () => {
+        if (!result) return;
+        setLoadingExplanation(true);
+        try {
+            const data = await getExplanation(result.explanation, result.breed);
+            if (data && data.explanation) {
+                setExtraExplanation(data.explanation);
+            }
+        } catch (error) {
+            console.error("Failed to fetch explanation", error);
+        } finally {
+            setLoadingExplanation(false);
+        }
+    };
 
     const confidencePct = Math.round(result.confidence * 100);
 
@@ -61,9 +88,28 @@ export const ResultModal: React.FC<ResultModalProps> = ({ visible, onClose, onSa
                                 <Text style={styles.detailValue}>{result.breed}</Text>
                             </View>
                         )}
+
+                        {extraExplanation && (
+                            <View style={[styles.explanationBox, { marginTop: 10, backgroundColor: theme.colors.surfaceSecondary }]}>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 5 }}>
+                                    <Ionicons name="sparkles" size={16} color={theme.colors.primary} style={{ marginRight: 6 }} />
+                                    <Text style={[styles.detailLabel, { color: theme.colors.primary }]}>Deep Dive</Text>
+                                </View>
+                                <Text style={styles.explanationText}>{extraExplanation}</Text>
+                            </View>
+                        )}
                     </ScrollView>
 
                     <View style={styles.footer}>
+                        {!extraExplanation && (
+                            <Button
+                                title="Explain Behavior"
+                                onPress={handleExplain}
+                                variant="secondary"
+                                loading={loadingExplanation}
+                                icon={<Ionicons name="bulb-outline" size={20} color={theme.colors.primary} />}
+                            />
+                        )}
                         <Button title="Save to History" onPress={onSave} style={styles.saveButton} />
                         <TouchableOpacity onPress={onClose} style={styles.doneButton}>
                             <Text style={styles.doneButtonText}>Done</Text>

@@ -1,6 +1,6 @@
 import React from 'react';
-import { View, TouchableOpacity, StyleSheet } from 'react-native';
-import Ionicons from 'react-native-vector-icons/Ionicons';
+import { View, TouchableOpacity, StyleSheet, Text } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../styles/theme';
 
 interface CameraControlsProps {
@@ -12,8 +12,8 @@ export const CameraControls: React.FC<CameraControlsProps> = ({ onCapture, onPic
     return (
         <View style={styles.container}>
             <View style={styles.controls}>
-                <TouchableOpacity 
-                    onPress={onPickImage} 
+                <TouchableOpacity
+                    onPress={onPickImage}
                     style={styles.secondaryButton}
                     accessibilityLabel="Select image from gallery"
                     accessibilityRole="button"
@@ -21,8 +21,8 @@ export const CameraControls: React.FC<CameraControlsProps> = ({ onCapture, onPic
                     <Ionicons name="images" size={28} color="#FFF" />
                 </TouchableOpacity>
 
-                <TouchableOpacity 
-                    onPress={onCapture} 
+                <TouchableOpacity
+                    onPress={onCapture}
                     style={styles.captureButton}
                     accessibilityLabel="Take dog photo"
                     accessibilityRole="button"
@@ -31,7 +31,7 @@ export const CameraControls: React.FC<CameraControlsProps> = ({ onCapture, onPic
                     <View style={styles.captureInner} />
                 </TouchableOpacity>
 
-                <TouchableOpacity 
+                <TouchableOpacity
                     onPress={onPickImage}
                     style={styles.uploadLabelButton}
                 >

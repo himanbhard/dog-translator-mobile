@@ -1,6 +1,6 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Platform } from 'react-native';
-import Ionicons from 'react-native-vector-icons/Ionicons';
+import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../styles/theme';
 
 interface Props {
@@ -46,15 +46,15 @@ export class ErrorBoundary extends Component<Props, State> {
                         <Text style={styles.subtitle}>
                             An unexpected error occurred. Our team has been notified.
                         </Text>
-                        
+
                         <View style={styles.errorBox}>
                             <Text style={styles.errorText} numberOfLines={3}>
                                 {this.state.error?.message || 'Unknown Error'}
                             </Text>
                         </View>
 
-                        <TouchableOpacity 
-                            style={styles.button} 
+                        <TouchableOpacity
+                            style={styles.button}
                             onPress={this.handleRetry}
                             activeOpacity={0.7}
                         >

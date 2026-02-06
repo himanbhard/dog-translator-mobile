@@ -4,7 +4,7 @@ import { usePetStore } from '../store/usePetStore';
 import { theme } from '../styles/theme';
 import { ScreenWrapper } from '../components/ui/ScreenWrapper';
 import { Card } from '../components/ui/Card';
-import Ionicons from 'react-native-vector-icons/Ionicons';
+import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { Button } from '../components/ui/Button';
 
@@ -13,7 +13,7 @@ export default function PetListScreen() {
     const navigation = useNavigation<any>();
 
     const renderPet = ({ item }: { item: any }) => (
-        <TouchableOpacity 
+        <TouchableOpacity
             style={[styles.petCard, activePetId === item.id && styles.activeCard]}
             onPress={() => setActivePet(item.id)}
             onLongPress={() => {
@@ -45,7 +45,7 @@ export default function PetListScreen() {
                     {activePetId === item.id && (
                         <Ionicons name="checkmark-circle" size={24} color={theme.colors.primary} style={{ marginRight: 8 }} />
                     )}
-                    <TouchableOpacity 
+                    <TouchableOpacity
                         onPress={() => navigation.navigate('Scan')}
                         style={styles.translateIcon}
                     >
@@ -75,8 +75,8 @@ export default function PetListScreen() {
                         <View style={styles.empty}>
                             <Ionicons name="paw-outline" size={80} color={theme.colors.separator} />
                             <Text style={styles.emptyText}>No pets added yet.</Text>
-                            <Button 
-                                title="Add Your First Pet" 
+                            <Button
+                                title="Add Your First Pet"
                                 onPress={() => navigation.navigate('AddPet')}
                                 style={{ marginTop: 20 }}
                             />

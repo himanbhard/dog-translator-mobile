@@ -4,7 +4,7 @@ import * as WebBrowser from 'expo-web-browser';
 import { getBehaviorInsights, InsightArticle } from '../api/insightsService';
 import { InsightCard } from './ui/InsightCard';
 import { theme } from '../styles/theme';
-import Ionicons from 'react-native-vector-icons/Ionicons';
+import { Ionicons } from '@expo/vector-icons';
 
 interface BehaviorInsightsSectionProps {
     behavior: string;

@@ -1,4 +1,4 @@
-import Ionicons from 'react-native-vector-icons/Ionicons';
+import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, StyleSheet, Text, TextInput, TouchableOpacity, View, Platform, KeyboardAvoidingView, ScrollView } from 'react-native';
 import { login, register } from '../api/auth';
@@ -81,7 +81,7 @@ export default function LoginScreen() {
 
     return (
         <ScreenWrapper statusBarStyle="dark-content">
-            <KeyboardAvoidingView 
+            <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 style={styles.container}
             >
@@ -135,8 +135,8 @@ export default function LoginScreen() {
                             accessibilityLabel={isLogin ? 'Sign In button' : 'Create Account button'}
                         />
 
-                        <TouchableOpacity 
-                            onPress={() => setIsLogin(!isLogin)} 
+                        <TouchableOpacity
+                            onPress={() => setIsLogin(!isLogin)}
                             style={styles.switchButton}
                             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                             accessibilityLabel={isLogin ? "Go to Sign Up screen" : "Go to Log In screen"}

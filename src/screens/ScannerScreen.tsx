@@ -8,7 +8,7 @@ import { addHistoryEntry } from '../services/historyDatabase';
 import { useSettingsStore } from '../store/settingsStore';
 import { theme } from '../styles/theme';
 import { speak, stop as stopSpeech } from '../utils/textToSpeech';
-import Ionicons from 'react-native-vector-icons/Ionicons';
+import { Ionicons } from '@expo/vector-icons';
 import NetInfo from '@react-native-community/netinfo';
 import { addToQueue } from '../services/offlineQueue';
 import { ScreenWrapper } from '../components/ui/ScreenWrapper';
@@ -137,7 +137,7 @@ export default function ScannerScreen() {
 
     const handleSaveResult = async () => {
         if (!analysisResult || !currentImageUri) return;
-        
+
         try {
             const permanentPath = await saveImageToInternalStorage(currentImageUri);
             await addHistoryEntry(permanentPath, {
@@ -163,7 +163,7 @@ export default function ScannerScreen() {
     const takePicture = async () => {
         if (cameraRef.current) {
             try {
-                const photo = await cameraRef.current.takePhoto({ qualityPrioritization: 'quality' });
+                const photo = await cameraRef.current.takePhoto();
                 if (photo?.path) handleAnalysis('file://' + photo.path);
             } catch (error) {
                 console.error("Capture Error:", error);
