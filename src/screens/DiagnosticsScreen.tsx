@@ -13,6 +13,7 @@ import { ScreenWrapper } from '../components/ui/ScreenWrapper';
 import { Button } from '../components/ui/Button';
 import { auth } from '../config/firebase';
 import axios from 'axios';
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
 
 // Direct API URLs for testing (bypasses client interceptors)
 // Direct API URLs for testing (bypasses client interceptors)
@@ -239,6 +240,15 @@ export default function DiagnosticsScreen() {
             updateResult('Cloud Run Test', 'error', 'HTTPS test failed', e.message);
         }
 
+        // Test: Google Sign-In Configuration
+        updateResult('Google Sign-In', 'pending', 'Checking Play Services...');
+        try {
+            await GoogleSignin.hasPlayServices();
+            updateResult('Google Sign-In', 'success', 'Play Services available');
+        } catch (e: any) {
+            updateResult('Google Sign-In', 'error', 'Play Services check failed', `${e.code}: ${e.message}`);
+        }
+
         setIsRunning(false);
     };
 
@@ -302,6 +312,8 @@ export default function DiagnosticsScreen() {
                     <Text style={styles.infoText}>• If "API Health" fails: Check internet connection</Text>
                     <Text style={styles.infoText}>• If "Firebase Token" fails: Reinstall the app</Text>
                     <Text style={styles.infoText}>• If "API Auth" shows 401: Token may be expired</Text>
+                    <Text style={styles.infoText}>• If "Google Sign-In" fails (DEVELOPER_ERROR): Check SHA-1</Text>
+                    <Text style={[styles.infoText, { fontFamily: 'Courier', fontSize: 10 }]}>  REQUIRED SHA-1: 5E:8F:16:06:2E:A3:CD:2C:4A:0D:54:78:76:BA:A6:F3:8C:AB:F6:25</Text>
                 </View>
             </ScrollView>
         </ScreenWrapper>

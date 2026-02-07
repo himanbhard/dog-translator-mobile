@@ -74,7 +74,15 @@ export default function LoginScreen() {
         } catch (error: any) {
             if (error.code !== statusCodes.SIGN_IN_CANCELLED) {
                 console.error("Google Sign-In Exception:", error);
-                Alert.alert('Google Sign-In Error', error.message || 'Unknown error');
+
+                if (error.code === statusCodes.DEVELOPER_ERROR) {
+                    Alert.alert(
+                        'Configuration Error',
+                        'Google Sign-In is not configured correctly on Firebase.\n\nREQUIRED SHA-1:\n5E:8F:16:06:2E:A3:CD:2C:4A:0D:54:78:76:BA:A6:F3:8C:AB:F6:25\n\nPlease add this to Firebase Console -> Project Settings -> Your Apps.'
+                    );
+                } else {
+                    Alert.alert('Google Sign-In Error', error.message || 'Unknown error');
+                }
             }
         }
     };

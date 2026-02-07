@@ -26,7 +26,7 @@ export const ScreenWrapper: React.FC<ScreenWrapperProps> = ({
 
     const contentStyle = [
         styles.content,
-        { 
+        {
             paddingTop: insets.top,
             paddingBottom: insets.bottom,
             paddingLeft: insets.left,
@@ -40,8 +40,8 @@ export const ScreenWrapper: React.FC<ScreenWrapperProps> = ({
         return (
             <View style={[styles.container, { backgroundColor }]}>
                 <StatusBar barStyle={statusBarStyle} />
-                <ScrollView 
-                    style={styles.container} 
+                <ScrollView
+                    style={styles.container}
                     contentContainerStyle={contentStyle}
                     showsVerticalScrollIndicator={false}
                 >
@@ -66,6 +66,6 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     content: {
-        flex: 1,
+        flexGrow: 1,
     },
 });

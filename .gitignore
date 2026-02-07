@@ -30,3 +30,4 @@ local_build_pid.txt
 local_build_10.log
 local_build_pid_10.txt
 local_build.sh
+local_build_*
