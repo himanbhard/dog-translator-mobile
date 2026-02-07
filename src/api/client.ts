@@ -3,14 +3,13 @@ import { auth } from '../config/firebase';
 import { Logger } from '../services/Logger';
 import { getAppCheckToken } from '../services/appCheck';
 
-// Google Cloud Run Endpoint
-// Fallback URL in case environment variable is not loaded
-const FALLBACK_API_URL = 'https://dog-translator-service-736369571076.us-east1.run.app';
-const API_URL = process.env.EXPO_PUBLIC_API_URL || FALLBACK_API_URL;
+// Google Cloud Run Endpoint (Using the short-tagged URL which proved more reliable in diagnostics)
+const FALLBACK_API_URL = 'https://dog-translator-service-qmvz4dws7a-ue.a.run.app';
+const API_URL = (process.env.EXPO_PUBLIC_API_URL || FALLBACK_API_URL).trim();
 
 // Debug: Log API URL on module load
 console.log('🔧 API Client Configuration:');
-console.log('   EXPO_PUBLIC_API_URL from env:', process.env.EXPO_PUBLIC_API_URL || '❌ UNDEFINED');
+console.log('   EXPO_PUBLIC_API_URL from env:', (process.env.EXPO_PUBLIC_API_URL || '').trim() || '❌ UNDEFINED');
 console.log('   Using API_URL:', API_URL);
 
 if (!process.env.EXPO_PUBLIC_API_URL) {

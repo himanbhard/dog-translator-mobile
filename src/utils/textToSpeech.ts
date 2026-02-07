@@ -13,16 +13,16 @@ Tts.setDefaultLanguage('en-US');
 // Tone-specific voice settings (Simulated by pitch/rate since Tts APIs differ)
 const voiceSettings = {
     playful: {
-        pitch: 1.3,
-        rate: 0.55 // Tts rate is different scale usually 0.0-1.0
+        pitch: 1.1,  // Reduced from 1.3 (less squeaky)
+        rate: 0.48   // Slower for smoother delivery
     },
     calm: {
-        pitch: 0.85,
-        rate: 0.4
+        pitch: 0.9,  // Slightly higher from 0.85 (less robotic)
+        rate: 0.38   // Very deliberate pace
     },
     trainer: {
-        pitch: 1.0,
-        rate: 0.5
+        pitch: 1.0,  // Neutral authority
+        rate: 0.45   // Clear enunciation
     },
 };
 

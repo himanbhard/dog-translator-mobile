@@ -6,11 +6,16 @@ import { onAuthStateChanged, User } from 'firebase/auth';
 import { RootNavigator } from './navigation';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
+import { initHistoryDB } from './services/historyDatabase';
+
 const App = () => {
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        // Initialize Database
+        initHistoryDB();
+
         const unsubscribe = onAuthStateChanged(auth, (u) => {
             setUser(u);
             setLoading(false);

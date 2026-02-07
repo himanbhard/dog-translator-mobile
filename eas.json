@@ -14,7 +14,7 @@
                 "EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID": "736369571076",
                 "EXPO_PUBLIC_FIREBASE_APP_ID": "1:736369571076:android:dbc8dd7dff8d49d02bcc51",
                 "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "736369571076-i44v2mggoqmegi7tsk7lsb40lfonmq24.apps.googleusercontent.com",
-                "EXPO_PUBLIC_API_URL": "https://dog-translator-service-736369571076.us-east1.run.app"
+                "EXPO_PUBLIC_API_URL": "https://dog-translator-service-qmvz4dws7a-ue.a.run.app"
             }
         },
         "preview": {
@@ -29,7 +29,7 @@
                 "EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID": "736369571076",
                 "EXPO_PUBLIC_FIREBASE_APP_ID": "1:736369571076:android:dbc8dd7dff8d49d02bcc51",
                 "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "736369571076-i44v2mggoqmegi7tsk7lsb40lfonmq24.apps.googleusercontent.com",
-                "EXPO_PUBLIC_API_URL": "https://dog-translator-service-736369571076.us-east1.run.app"
+                "EXPO_PUBLIC_API_URL": "https://dog-translator-service-qmvz4dws7a-ue.a.run.app"
             }
         },
         "production": {}

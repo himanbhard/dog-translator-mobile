@@ -53,12 +53,20 @@ export default function HistoryDetailScreen() {
     const handleExplain = async () => {
         setLoadingExplanation(true);
         try {
+            console.log("Starting explanation fetch...");
+            // Alert.alert("Debug", "Fetching explanation..."); 
             const data = await getExplanation(metadata.explanation, metadata.breed);
+            console.log("Explanation data received:", data);
+
             if (data && data.explanation) {
                 setExtraExplanation(data.explanation);
+                // Alert.alert("Debug", "Explanation received!");
+            } else {
+                Alert.alert("Notice", "No explanation details found.");
             }
-        } catch (error) {
-            Alert.alert("Error", "Could not fetch explanation.");
+        } catch (error: any) {
+            console.error("Explain UI Error:", error);
+            Alert.alert("Error", error.message || "Could not fetch explanation.");
         } finally {
             setLoadingExplanation(false);
         }
@@ -69,7 +77,7 @@ export default function HistoryDetailScreen() {
             <View style={styles.container}>
                 <Card style={styles.imageCard}>
                     <Image
-                        source={{ uri: 'file://' + item.local_file_path }}
+                        source={{ uri: item.local_file_path.startsWith('file://') ? item.local_file_path : 'file://' + item.local_file_path }}
                         style={styles.image}
                         resizeMode="cover"
                     />

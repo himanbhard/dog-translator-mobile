@@ -23,6 +23,9 @@ import { CameraControls } from '../components/scanner/CameraControls';
 import { CameraView } from '../components/scanner/CameraView';
 import { ResultModal } from '../components/scanner/ResultModal';
 
+import { useIsFocused } from '@react-navigation/native';
+import { AppState, AppStateStatus } from 'react-native';
+
 export default function ScannerScreen() {
     const { status, isGranted, isBlocked, isLimited, request, openSettings, refresh } = usePermission('camera');
     const device = useCameraDevice('back');
@@ -34,8 +37,26 @@ export default function ScannerScreen() {
     const [currentImageUri, setCurrentImageUri] = useState<string | null>(null);
     const [showResultModal, setShowResultModal] = useState(false);
 
+    // Focus and AppState handling for Camera
+    const isFocused = useIsFocused();
+    const appState = useRef(AppState.currentState);
+    const [appStateVisible, setAppStateVisible] = useState(appState.current);
+
+    useEffect(() => {
+        const subscription = AppState.addEventListener('change', nextAppState => {
+            appState.current = nextAppState;
+            setAppStateVisible(appState.current);
+        });
+        return () => {
+            subscription.remove();
+        };
+    }, []);
+
+    const isActive = isFocused && appStateVisible === 'active' && !showResultModal && !isanalyzing;
+
     const { autoSpeak, isPremium, dailyScans, incrementScanCount, checkResetDailyScans } = useSettingsStore();
-    const { activePetId } = usePetStore();
+    const { activePetId, pets } = usePetStore();
+    const activePet = pets.find(p => p.id === activePetId);
 
     useEffect(() => {
         checkResetDailyScans();
@@ -104,7 +125,7 @@ export default function ScannerScreen() {
             return;
         }
 
-        if (!isPremium && dailyScans >= 5) {
+        if (!isPremium && dailyScans >= 30) {
             Alert.alert("Daily Limit Reached", "Upgrade to Premium for unlimited scans!");
             return;
         }
@@ -148,8 +169,9 @@ export default function ScannerScreen() {
             }, activePetId);
             Alert.alert("Success", "Saved to history!");
             setShowResultModal(false);
-        } catch (e) {
-            Alert.alert("Error", "Failed to save locally.");
+        } catch (e: any) {
+            console.error("Save Error:", e);
+            Alert.alert("Error", `Failed to save locally: ${e.message}`);
         }
     };
 
@@ -178,9 +200,16 @@ export default function ScannerScreen() {
             <CameraView
                 ref={cameraRef}
                 device={device}
+                isActive={isActive}
             />
 
             <View style={styles.topOverlay}>
+                {activePet && (
+                    <View style={styles.petBadge}>
+                        <Ionicons name="paw" size={16} color={theme.colors.white} />
+                        <Text style={styles.petName}> {activePet.name}</Text>
+                    </View>
+                )}
                 <ToneSelector
                     activeTone={tone}
                     onToneChange={setTone}
@@ -271,5 +300,23 @@ const styles = StyleSheet.create({
         ...theme.typography.caption,
         color: theme.colors.primary,
         textDecorationLine: 'underline',
+    },
+    petBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0,0,0,0.6)',
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        borderRadius: 20,
+        marginBottom: 16,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.2)',
+    },
+    petName: {
+        ...theme.typography.headline,
+        color: theme.colors.white,
+        marginLeft: 8,
+        fontSize: 14,
+        fontWeight: 'bold',
     },
 });

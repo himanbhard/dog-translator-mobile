@@ -20,16 +20,24 @@ export const saveImageToInternalStorage = async (tempUri: string): Promise<strin
         const fileName = `translation_${Date.now()}.jpg`;
         const destPath = `${destDir}/${fileName}`;
 
-        // Clean the URI for RNFS (remove 'file://' if present)
-        const sourcePath = tempUri.startsWith('file://') 
-            ? tempUri.replace('file://', '') 
-            : tempUri;
+        // Handle content:// URIs (e.g., from Gallery)
+        if (tempUri.startsWith('content://')) {
+            // content:// URIs cannot be copied directly with RNFS.copyFile on all versions
+            // We must read it and write it.
+            const data = await RNFS.readFile(tempUri, 'base64');
+            await RNFS.writeFile(destPath, data, 'base64');
+        } else {
+            // Handle file:// URIs (e.g., from Camera)
+            // Clean the URI for RNFS (remove 'file://' prefix for copyFile)
+            const sourcePath = tempUri.startsWith('file://')
+                ? tempUri.replace('file://', '')
+                : tempUri;
 
-        // Move the file from temporary to internal persistent storage
-        await RNFS.copyFile(sourcePath, destPath);
+            await RNFS.copyFile(sourcePath, destPath);
+        }
 
         console.log(`✅ Image saved to internal storage: ${destPath}`);
-        return destPath;
+        return `file://${destPath}`; // Return with schema for easy display in <Image>
     } catch (error) {
         console.error("❌ Error saving image to internal storage:", error);
         throw error;

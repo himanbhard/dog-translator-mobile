@@ -46,7 +46,16 @@ export default function PetListScreen() {
                         <Ionicons name="checkmark-circle" size={24} color={theme.colors.primary} style={{ marginRight: 8 }} />
                     )}
                     <TouchableOpacity
-                        onPress={() => navigation.navigate('Scan')}
+                        onPress={() => navigation.navigate('History', { screen: 'HistoryList', params: { petId: item.id, petName: item.name } })}
+                        style={[styles.translateIcon, { marginRight: 8 }]}
+                    >
+                        <Ionicons name="time-outline" size={32} color={theme.colors.textSecondary} />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        onPress={() => {
+                            setActivePet(item.id);
+                            navigation.navigate('Scan');
+                        }}
                         style={styles.translateIcon}
                     >
                         <Ionicons name="scan-circle" size={32} color={theme.colors.primary} />

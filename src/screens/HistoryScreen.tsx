@@ -7,29 +7,47 @@ import { ScreenWrapper } from '../components/ui/ScreenWrapper';
 import { Card } from '../components/ui/Card';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
+import { useRoute } from '@react-navigation/native';
+
 export default function HistoryScreen() {
     const [history, setHistory] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const navigation = useNavigation<any>();
+    const route = useRoute<any>();
+    const { petId, petName } = route.params || {};
 
     useEffect(() => {
+        navigation.setOptions({
+            title: petName ? `${petName}'s History` : 'History'
+        });
         loadHistory();
-    }, []);
+
+        // Add navigation listener to reload when focused (in case new scans added)
+        const unsubscribe = navigation.addListener('focus', () => {
+            loadHistory();
+        });
+        return unsubscribe;
+    }, [navigation, petId, petName]);
 
     const loadHistory = async () => {
         setLoading(true);
-        const items = await getAllHistory();
-        setHistory(items);
-        setLoading(false);
+        try {
+            const items = await getAllHistory(petId);
+            setHistory(items);
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setLoading(false);
+        }
     };
 
     const renderItem = ({ item }: { item: any }) => (
-        <TouchableOpacity 
+        <TouchableOpacity
             onPress={() => navigation.navigate('HistoryDetail', { item })}
             activeOpacity={0.7}
         >
             <Card style={styles.card}>
-                <Image source={{ uri: 'file://' + item.local_file_path }} style={styles.image} />
+                <Image source={{ uri: item.local_file_path.startsWith('file://') ? item.local_file_path : 'file://' + item.local_file_path }} style={styles.image} />
                 <View style={styles.info}>
                     <Text style={styles.date}>{new Date(item.timestamp).toLocaleDateString()}</Text>
                     <Text style={styles.explanation} numberOfLines={2}>

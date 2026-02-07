@@ -1,4 +1,4 @@
-import Ionicons from 'react-native-vector-icons/Ionicons';
+import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { Alert, ScrollView, StyleSheet, Switch, Text, View, TouchableOpacity } from 'react-native';
 import { logout } from '../api/auth';
@@ -8,10 +8,12 @@ import { ScreenWrapper } from '../components/ui/ScreenWrapper';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { auth } from '../config/firebase';
+import { useNavigation } from '@react-navigation/native';
 
 export default function SettingsScreen() {
     const { autoSpeak, toggleAutoSpeak, isPremium } = useSettingsStore();
     const user = auth.currentUser;
+    const navigation = useNavigation<any>();
 
     const handleLogout = async () => {
         Alert.alert(
@@ -70,7 +72,7 @@ export default function SettingsScreen() {
                         icon="notifications"
                         title="Enable Notifications"
                         value={true}
-                        onToggle={() => {}}
+                        onToggle={() => { }}
                         last
                     />
                 </Card>
@@ -84,11 +86,31 @@ export default function SettingsScreen() {
                             <View style={{ marginLeft: theme.spacing.m }}>
                                 <Text style={styles.settingTitle}>Premium Status</Text>
                                 <Text style={styles.subtext}>
-                                    {isPremium ? 'Active Plan' : 'Free Plan (5 scans / day)'}
+                                    {isPremium ? 'Active Plan' : 'Free Plan (30 scans / day)'}
                                 </Text>
                             </View>
                         </View>
                         {!isPremium && <Ionicons name="chevron-forward" size={20} color={theme.colors.separator} />}
+                    </TouchableOpacity>
+                </Card>
+
+                {/* Developer / Debug */}
+                <Text style={styles.sectionTitle}>DEVELOPER</Text>
+                <Card style={styles.settingsCard}>
+                    <TouchableOpacity
+                        style={styles.premiumRow}
+                        onPress={() => navigation.navigate('Diagnostics')}
+                    >
+                        <View style={styles.settingLeft}>
+                            <Ionicons name="bug-outline" size={22} color={theme.colors.primary} />
+                            <View style={{ marginLeft: theme.spacing.m }}>
+                                <Text style={styles.settingTitle}>Diagnostics</Text>
+                                <Text style={styles.subtext}>
+                                    Test API connectivity & debug issues
+                                </Text>
+                            </View>
+                        </View>
+                        <Ionicons name="chevron-forward" size={20} color={theme.colors.separator} />
                     </TouchableOpacity>
                 </Card>
 

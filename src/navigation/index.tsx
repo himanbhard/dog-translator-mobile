@@ -14,6 +14,7 @@ import SettingsScreen from '../screens/SettingsScreen';
 import PetListScreen from '../screens/PetListScreen';
 import AddPetScreen from '../screens/AddPetScreen';
 import PaywallScreen from '../screens/PaywallScreen';
+import DiagnosticsScreen from '../screens/DiagnosticsScreen';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -42,7 +43,7 @@ const MainTabs = () => (
     <Tab.Navigator
         screenOptions={({ route }) => ({
             tabBarIcon: ({ focused, color, size }) => {
-                let iconName = 'paw';
+                let iconName: keyof typeof Ionicons.glyphMap = 'paw';
                 if (route.name === 'Scan') iconName = focused ? 'scan' : 'scan-outline';
                 else if (route.name === 'History') iconName = focused ? 'time' : 'time-outline';
                 else if (route.name === 'Pets') iconName = focused ? 'paw' : 'paw-outline';
@@ -75,6 +76,7 @@ export const RootNavigator = ({ user }: { user: User | null }) => {
                 <>
                     <Stack.Screen name="Main" component={MainTabs} />
                     <Stack.Screen name="Paywall" component={PaywallScreen} options={{ presentation: 'modal' }} />
+                    <Stack.Screen name="Diagnostics" component={DiagnosticsScreen} options={{ presentation: 'modal', headerShown: true, title: 'Diagnostics' }} />
                 </>
             )}
         </Stack.Navigator>
