@@ -76,9 +76,9 @@ export const RootNavigator = ({ user }: { user: User | null }) => {
                 <>
                     <Stack.Screen name="Main" component={MainTabs} />
                     <Stack.Screen name="Paywall" component={PaywallScreen} options={{ presentation: 'modal' }} />
-                    <Stack.Screen name="Diagnostics" component={DiagnosticsScreen} options={{ presentation: 'modal', headerShown: true, title: 'Diagnostics' }} />
                 </>
             )}
+            <Stack.Screen name="Diagnostics" component={DiagnosticsScreen} options={{ presentation: 'modal', headerShown: true, title: 'Diagnostics' }} />
         </Stack.Navigator>
     );
 };

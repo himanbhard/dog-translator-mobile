@@ -8,7 +8,10 @@ import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-si
 import { ScreenWrapper } from '../components/ui/ScreenWrapper';
 import { Button } from '../components/ui/Button';
 
+import { useNavigation } from '@react-navigation/native';
+
 export default function LoginScreen() {
+    const navigation = useNavigation<any>();
     const [isLogin, setIsLogin] = useState(true);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -75,7 +78,8 @@ export default function LoginScreen() {
             if (error.code !== statusCodes.SIGN_IN_CANCELLED) {
                 console.error("Google Sign-In Exception:", error);
 
-                if (error.code === statusCodes.DEVELOPER_ERROR) {
+                // @ts-ignore: DEVELOPER_ERROR exists at runtime but missing in type definition
+                if (error.code === statusCodes.DEVELOPER_ERROR || error.code === '10') {
                     Alert.alert(
                         'Configuration Error',
                         'Google Sign-In is not configured correctly on Firebase.\n\nREQUIRED SHA-1:\n5E:8F:16:06:2E:A3:CD:2C:4A:0D:54:78:76:BA:A6:F3:8C:AB:F6:25\n\nPlease add this to Firebase Console -> Project Settings -> Your Apps.'
@@ -186,6 +190,13 @@ export default function LoginScreen() {
                     </View>
                 </ScrollView>
             </KeyboardAvoidingView>
+
+            <TouchableOpacity
+                style={styles.debugButton}
+                onPress={() => navigation.navigate('Diagnostics')}
+            >
+                <Text style={styles.debugText}>Troubleshoot Login Issues</Text>
+            </TouchableOpacity>
         </ScreenWrapper>
     );
 }
@@ -284,5 +295,15 @@ const styles = StyleSheet.create({
     },
     socialButton: {
         flex: 1,
+    },
+    debugButton: {
+        marginBottom: 20,
+        alignItems: 'center',
+        padding: 10,
+    },
+    debugText: {
+        color: theme.colors.textSecondary,
+        textDecorationLine: 'underline',
+        fontSize: 12,
     }
 });

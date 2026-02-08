@@ -13,6 +13,7 @@ import { ScreenWrapper } from '../components/ui/ScreenWrapper';
 import { Button } from '../components/ui/Button';
 import { auth } from '../config/firebase';
 import axios from 'axios';
+import client from '../api/client';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 
 // Direct API URLs for testing (bypasses client interceptors)
@@ -65,6 +66,13 @@ export default function DiagnosticsScreen() {
             updateResult('Environment', 'error', 'EXPO_PUBLIC_API_URL not set', 'Using fallback URL');
         }
 
+        const webClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
+        if (webClientId) {
+            updateResult('Env: Web Client ID', 'success', 'Found Client ID', `${webClientId.substring(0, 15)}...`);
+        } else {
+            updateResult('Env: Web Client ID', 'error', 'Missing Web Client ID', 'Google Login will fail');
+        }
+
         // Test 2: Check Firebase Auth State
         updateResult('Firebase Auth', 'pending', 'Checking...');
         try {
@@ -93,18 +101,21 @@ export default function DiagnosticsScreen() {
             updateResult('Firebase Token', 'error', 'Failed to get token', e.message);
         }
 
-        // Test 4: API Health Check using fresh AXIOS (no interceptors)
-        updateResult('API (fresh axios)', 'pending', 'Checking backend...');
+        // Test 4: API Health (Client)
+        updateResult('API (Client)', 'pending', 'Checking connectivity...');
         try {
-            const response = await freshAxios.get(`${API_URL}/health`);
-            if (response.data?.status === 'ok') {
-                updateResult('API (fresh axios)', 'success', 'Backend is healthy', JSON.stringify(response.data));
+            // Use the app's standard client (now using Fetch adapter)
+            const response = await client.get('/health');
+            console.log("Client health response:", response.status);
+
+            if (response.status === 200) {
+                updateResult('API (Client)', 'success', 'Connected', `Status: ${response.status}`);
             } else {
-                updateResult('API (fresh axios)', 'error', 'Unexpected response', JSON.stringify(response.data));
+                updateResult('API (Client)', 'error', 'Error Response', `Status: ${response.status}`);
             }
         } catch (e: any) {
-            const errorDetails = `Code: ${e.code || 'N/A'}, Message: ${e.message}, Config URL: ${e.config?.url || 'N/A'}`;
-            updateResult('API (fresh axios)', 'error', 'Cannot reach backend', errorDetails);
+            console.error("Client Health Check Failed:", e);
+            updateResult('API (Client)', 'error', 'Connection Failed', e.message || 'Unknown error');
         }
 
         // Test 4b: Try the alternate Cloud Run URL

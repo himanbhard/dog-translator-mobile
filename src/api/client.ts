@@ -1,138 +1,131 @@
-import axios from 'axios';
 import { auth } from '../config/firebase';
-import { Logger } from '../services/Logger';
 import { getAppCheckToken } from '../services/appCheck';
+import { Logger } from '../services/Logger';
 
-// Google Cloud Run Endpoint (Using the short-tagged URL which proved more reliable in diagnostics)
+// Google Cloud Run Endpoint
 const FALLBACK_API_URL = 'https://dog-translator-service-qmvz4dws7a-ue.a.run.app';
 const API_URL = (process.env.EXPO_PUBLIC_API_URL || FALLBACK_API_URL).trim();
 
-// Debug: Log API URL on module load
-console.log('🔧 API Client Configuration:');
-console.log('   EXPO_PUBLIC_API_URL from env:', (process.env.EXPO_PUBLIC_API_URL || '').trim() || '❌ UNDEFINED');
-console.log('   Using API_URL:', API_URL);
+console.log('🔧 API Client Configuration (Fetch Adapter):');
+console.log('   API_URL:', API_URL);
 
-if (!process.env.EXPO_PUBLIC_API_URL) {
-    console.warn('⚠️ EXPO_PUBLIC_API_URL not found in environment, using fallback URL');
+// Custom Error Class to mimic Axios Error for compatibility
+class AxiosError extends Error {
+    response: any;
+    config: any;
+    code?: string;
+    constructor(message: string, response?: any, config?: any, code?: string) {
+        super(message);
+        this.name = 'AxiosError';
+        this.response = response;
+        this.config = config;
+        this.code = code;
+    }
 }
 
-const client = axios.create({
-    baseURL: API_URL,
-    timeout: 60000,
-    headers: {
+// Fetch Implementation
+const request = async (method: string, url: string, data?: any, config: any = {}) => {
+    // Construct Full URL
+    const fullUrl = url.startsWith('http') ? url : `${API_URL}${url}`;
+
+    // Headers
+    const headers: Record<string, string> = {
         'Accept': 'application/json',
-    },
-    transformRequest: [(data, headers) => {
-        if (data instanceof FormData) {
-            delete headers['Content-Type'];
-            return data;
-        }
-        if (headers['Content-Type'] === 'application/json') {
-            return JSON.stringify(data);
-        }
-        return data;
-    }],
-});
+        'Content-Type': 'application/json', // Default to JSON
+        ...config.headers
+    };
 
-client.interceptors.request.use(
-    async (config) => {
-        // Log Request
-        Logger.info(`➡️ REQUEST: ${config.method?.toUpperCase()} ${config.url} `);
+    // 1. Request Interceptor Logic
+    Logger.info(`➡️ REQUEST (Fetch): ${method} ${fullUrl}`);
 
-        // Get fresh token from Firebase (wrapped in try-catch to prevent failures)
-        try {
-            const currentUser = auth.currentUser;
-            console.log('🔐 Auth State:', currentUser ? `User: ${currentUser.email}` : '❌ NOT LOGGED IN');
-
-            if (currentUser) {
-                const token = await currentUser.getIdToken();
-                if (token) {
-                    config.headers.Authorization = `Bearer ${token}`;
-                    console.log('✅ Authorization header set');
-                }
-            } else {
-                console.warn('⚠️ No authenticated user - request will be sent without Authorization header');
+    // Auth Token
+    try {
+        const currentUser = auth.currentUser;
+        if (currentUser) {
+            // Force token refresh if needed? No, just getIdToken()
+            const token = await currentUser.getIdToken();
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+                // console.log('✅ Authorization header set');
             }
-        } catch (authError) {
-            console.error('❌ Failed to get Firebase auth token:', authError);
-            // Continue without auth token - the backend will return 401 if auth is required
-        }
-
-        // Get App Check token (optional, don't fail if it doesn't work)
-        try {
-            const appCheckToken = await getAppCheckToken();
-            if (appCheckToken) {
-                config.headers['X-Firebase-AppCheck'] = appCheckToken;
-                console.log('✅ App Check Header SET');
-            } else {
-                console.warn('⚠️ App Check token is NULL - continuing without it');
-            }
-        } catch (e) {
-            console.error('❌ App Check token fetch FAILED:', e);
-            // Continue without App Check - backend should still work
-        }
-
-
-        // ===== DEBUG LOGGING =====
-        console.log('📤 REQUEST DETAILS:');
-        console.log('   URL:', (config.baseURL || '') + (config.url || ''));
-        console.log('   Method:', config.method);
-        console.log('   Has X-Firebase-AppCheck?', !!config.headers['X-Firebase-AppCheck']);
-        console.log('   Headers:', JSON.stringify(config.headers, null, 2));
-
-        if (config.data instanceof FormData) {
-            console.log('   Content-Type: multipart/form-data (FormData)');
-            console.log('   ⚠️  FormData contents cannot be logged directly in RN');
         } else {
-            console.log('   Data:', config.data);
+            console.warn('⚠️ No authenticated user');
         }
-        console.log('========================');
-
-        return config;
-    },
-    (error) => {
-        return Promise.reject(error);
+    } catch (e) {
+        console.warn('Failed to get Auth Token', e);
     }
-);
 
-client.interceptors.response.use(
-    (response) => {
-        Logger.info(`⬅️ RESPONSE: ${response.status} ${response.config.url} `);
-        return response;
-    },
-    (error) => {
-        const status = error.response ? error.response.status : 'UNKNOWN';
-        const url = error.config ? error.config.url : 'UNKNOWN';
+    // App Check
+    try {
+        const appCheck = await getAppCheckToken();
+        if (appCheck) headers['X-Firebase-AppCheck'] = appCheck;
+    } catch (e) {
+        console.warn('Failed to get AppCheck Token', e);
+    }
 
-        Logger.error(`❌ API ERROR: ${status} on ${url} `);
+    // 2. Execute Fetch
+    try {
+        const response = await fetch(fullUrl, {
+            method,
+            headers,
+            body: data && method !== 'GET' ? JSON.stringify(data) : undefined,
+        });
 
-        if (error.response) {
-            // Log full details for debugging 502/500/400
-            Logger.error('Error Details:', {
-                status: status,
-                data: error.response.data,
-                headers: error.response.headers, // Trace IDs often here
-            });
+        Logger.info(`⬅️ RESPONSE: ${response.status} ${fullUrl}`);
 
-            if (status === 413) {
-                console.error('Error 413: Payload Too Large. The image size exceeds the limit.');
-            } else if (status === 502) {
-                console.error('Error 502: Bad Gateway. Cloud Run or upstream service timed out.');
-            } else if (status === 422) {
-                console.error('🔍 Error 422: VALIDATION FAILED');
-                console.error('The server rejected the request. Common causes:');
-                console.error('1. "image" field missing?');
-                console.error('2. "tone" field missing?');
-                console.error('3. "image" is not a valid JPEG/PNG?');
-                console.error('Server response data:', JSON.stringify(error.response.data, null, 2));
-            }
-        } else if (error.code === 'ECONNABORTED') {
-            console.error('Request timed out');
-        } else {
-            Logger.error('Network Error (No Response):', error.message);
+        // 3. Parse Response
+        const text = await response.text();
+        let responseData;
+        try {
+            responseData = JSON.parse(text);
+        } catch {
+            responseData = text;
         }
-        return Promise.reject(error);
+
+        // 4. Handle HTTP Errors
+        if (!response.ok) {
+            // Log details
+            Logger.error(`❌ API ERROR: ${response.status} on ${fullUrl}`);
+
+            throw new AxiosError(
+                `Request failed with status ${response.status}`,
+                { status: response.status, data: responseData, headers: response.headers },
+                { url: fullUrl, method, headers },
+                response.status.toString()
+            );
+        }
+
+        // 5. Success
+        return {
+            data: responseData,
+            status: response.status,
+            headers: response.headers,
+            config: { url: fullUrl, method, headers },
+            request: {} // dummy
+        };
+
+    } catch (error: any) {
+        if (error.name === 'AxiosError') throw error;
+        // Network Error
+        Logger.error('❌ NETWORK ERROR:', error.message);
+        throw new AxiosError(error.message, undefined, { url: fullUrl, method }, 'ERR_NETWORK');
     }
-);
+};
+
+// Axios-compatible Interface
+const client = {
+    defaults: { baseURL: API_URL },
+    get: (url: string, config?: any) => request('GET', url, null, config),
+    post: (url: string, data?: any, config?: any) => request('POST', url, data, config),
+    put: (url: string, data?: any, config?: any) => request('PUT', url, data, config),
+    delete: (url: string, config?: any) => request('DELETE', url, null, config),
+
+    // Mock interceptors to prevent crashes if imported and used
+    interceptors: {
+        request: { use: () => { } },
+        response: { use: () => { } }
+    },
+    create: () => client
+};
 
 export default client;
